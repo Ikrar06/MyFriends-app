@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'myfriends-app-b016e.firebasestorage.app',
     measurementId: 'G-JT9F30M804',
   );
+
 }
