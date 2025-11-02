@@ -1,31 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../models/contact_model.dart';
 
 /// Contact Card Widget
 ///
 /// Reusable contact list item with photo, name, phone, and favorite icon.
 /// Displays contact information in a Material Card with tap handling.
 ///
-/// REQUIRES: Contact model from Orang 1 (Backend team)
-/// TODO: Import Contact model when available
-/// TODO: Replace dynamic with Contact type
-///
-/// Expected Contact model structure:
-/// ```dart
-/// class Contact {
-///   String? id;
-///   String nama;
-///   String nomor;
-///   String email;
-///   String? photoUrl;
-///   bool isFavorite;
-///   String userId;
-///   DateTime createdAt;
-///   DateTime updatedAt;
-/// }
-/// ```
-///
-/// Example usage (once Contact model is available):
+/// Example usage:
 /// ```dart
 /// ContactCard(
 ///   contact: contact,
@@ -39,7 +21,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 /// )
 /// ```
 class ContactCard extends StatelessWidget {
-  final dynamic contact; // TODO: Change to Contact type when available
+  final Contact contact;
   final VoidCallback onTap;
   final bool showFavorite;
 
@@ -62,13 +44,11 @@ class ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Extract contact properties (works with Map or Contact object)
-    final String nama = contact is Map ? contact['nama'] : contact.nama;
-    final String nomor = contact is Map ? contact['nomor'] : contact.nomor;
-    final String? photoUrl =
-        contact is Map ? contact['photoUrl'] : contact.photoUrl;
-    final bool isFavorite =
-        contact is Map ? contact['isFavorite'] ?? false : contact.isFavorite;
+    // Extract contact properties
+    final String nama = contact.nama;
+    final String nomor = contact.nomor;
+    final String? photoUrl = contact.photoUrl;
+    final bool isFavorite = contact.isFavorite;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -153,7 +133,7 @@ class ContactCard extends StatelessWidget {
 ///
 /// Smaller variant for selection dialogs or bottom sheets.
 class CompactContactCard extends StatelessWidget {
-  final dynamic contact; // TODO: Change to Contact type
+  final Contact contact;
   final VoidCallback? onTap;
   final Widget? trailing;
 
@@ -175,10 +155,9 @@ class CompactContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String nama = contact is Map ? contact['nama'] : contact.nama;
-    final String nomor = contact is Map ? contact['nomor'] : contact.nomor;
-    final String? photoUrl =
-        contact is Map ? contact['photoUrl'] : contact.photoUrl;
+    final String nama = contact.nama;
+    final String nomor = contact.nomor;
+    final String? photoUrl = contact.photoUrl;
 
     return ListTile(
       leading: CircleAvatar(

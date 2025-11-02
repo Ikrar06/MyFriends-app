@@ -1,30 +1,12 @@
 import 'package:flutter/material.dart';
+import '../models/group_model.dart';
 
 /// Group Card Widget
 ///
 /// Reusable group card with color indicator and contact count.
 /// Displays group information in a Material Card with tap handling.
 ///
-/// REQUIRES: Group model from Orang 1 (Backend team)
-/// TODO: Import Group model when available
-/// TODO: Replace dynamic with Group type
-///
-/// Expected Group model structure:
-/// ```dart
-/// class Group {
-///   String? id;
-///   String nama;
-///   String colorHex;  // "#FF5733"
-///   List<String> contactIds;
-///   String userId;
-///   DateTime createdAt;
-///   DateTime updatedAt;
-///
-///   int getContactCount() => contactIds.length;
-/// }
-/// ```
-///
-/// Example usage (once Group model is available):
+/// Example usage:
 /// ```dart
 /// GroupCard(
 ///   group: group,
@@ -38,7 +20,7 @@ import 'package:flutter/material.dart';
 /// )
 /// ```
 class GroupCard extends StatelessWidget {
-  final dynamic group; // TODO: Change to Group type when available
+  final Group group;
   final VoidCallback onTap;
 
   const GroupCard({
@@ -61,12 +43,10 @@ class GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Extract group properties (works with Map or Group object)
-    final String nama = group is Map ? group['nama'] : group.nama;
-    final String colorHex = group is Map ? group['colorHex'] : group.colorHex;
-    final List<dynamic> contactIds =
-        group is Map ? group['contactIds'] ?? [] : group.contactIds;
-    final int contactCount = contactIds.length;
+    // Extract group properties
+    final String nama = group.nama;
+    final String colorHex = group.colorHex;
+    final int contactCount = group.getContactCount();
     final Color groupColor = _hexToColor(colorHex);
 
     return Card(
@@ -147,7 +127,7 @@ class GroupCard extends StatelessWidget {
 ///
 /// Smaller variant for selection dialogs or horizontal lists.
 class CompactGroupCard extends StatelessWidget {
-  final dynamic group; // TODO: Change to Group type
+  final Group group;
   final VoidCallback? onTap;
   final bool isSelected;
 
@@ -171,8 +151,8 @@ class CompactGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String nama = group is Map ? group['nama'] : group.nama;
-    final String colorHex = group is Map ? group['colorHex'] : group.colorHex;
+    final String nama = group.nama;
+    final String colorHex = group.colorHex;
     final Color groupColor = _hexToColor(colorHex);
 
     return InkWell(
@@ -218,7 +198,7 @@ class CompactGroupCard extends StatelessWidget {
 ///
 /// Very small chip for displaying group tags in contact details.
 class GroupChip extends StatelessWidget {
-  final dynamic group; // TODO: Change to Group type
+  final Group group;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -242,8 +222,8 @@ class GroupChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String nama = group is Map ? group['nama'] : group.nama;
-    final String colorHex = group is Map ? group['colorHex'] : group.colorHex;
+    final String nama = group.nama;
+    final String colorHex = group.colorHex;
     final Color groupColor = _hexToColor(colorHex);
 
     return Chip(
