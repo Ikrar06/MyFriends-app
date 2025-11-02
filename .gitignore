@@ -47,4 +47,5 @@ app.*.map.json
 # Firebase
 /android/app/google-services.json
 
+panduan.md
 .vscode
