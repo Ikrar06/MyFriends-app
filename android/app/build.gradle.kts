@@ -12,9 +12,9 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        // set ke 1.8 agar desugaring bisa berjalan (safe & kompatibel)
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        // set ke 11 agar desugaring bisa berjalan (safe & kompatibel)
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
 
         // Aktifkan core library desugaring
         isCoreLibraryDesugaringEnabled = true
@@ -22,7 +22,7 @@ android {
 
     kotlinOptions {
         // jvmTarget sebagai string
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     defaultConfig {
