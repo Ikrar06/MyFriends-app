@@ -43,8 +43,8 @@ dependencies:
   
   # Export CSV
   csv: ^6.0.0                              # ⭐ TAMBAHKAN! (Generate CSV)
-  path_provider: ^2.1.4                    # ⭐ TAMBAHKAN! (Get file path)
-  share_plus: ^7.2.2                       # ⭐ TAMBAHKAN! (Share file)
+  path_provider: ^2.1.5                    # ⭐ TAMBAHKAN! (Get file path)
+  share_plus: ^12.0.1                       # ⭐ TAMBAHKAN! (Share file)
 
 dev_dependencies:
   flutter_test:
