@@ -35,9 +35,11 @@ dependencies:
   flutter_local_notifications: ^18.0.1     # ⭐ TAMBAHKAN!
   
   # Utilities
-  intl: ^0.19.0                            # ⭐ TAMBAHKAN! (Date formatting)
-  url_launcher: ^6.3.1                     # ⭐ TAMBAHKAN! (Launch phone/email)
-  permission_handler: ^11.3.1              # ⭐ TAMBAHKAN! (Handle permissions)
+  intl: ^0.19.0                            # Date formatting
+  url_launcher: ^6.3.1                     # Launch phone/email
+  permission_handler: ^11.3.1              # Handle permissions
+  shared_preferences: ^2.3.3               # Local storage for first time check
+  smooth_page_indicator: ^1.2.0            # Page indicator dots for onboarding
   
   # Export CSV
   csv: ^6.0.0                              # ⭐ TAMBAHKAN! (Generate CSV)
@@ -51,15 +53,30 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  # ⭐ TAMBAHKAN ASSETS (uncomment)
+
+  # Assets
   assets:
     - assets/images/
-  
-  # ⭐ OPTIONAL: Custom fonts
-  # fonts:
-  #   - family: Poppins
-  #     fonts:
-  #       - asset: fonts/Poppins-Regular.ttf
-  #       - asset: fonts/Poppins-Bold.ttf
-  #         weight: 700
+
+  # Custom Fonts - Poppins
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/Poppins-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Poppins-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Poppins-Black.ttf
+          weight: 900

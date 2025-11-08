@@ -43,6 +43,7 @@ class AppTheme {
     brightness: Brightness.light,
     primaryColor: primaryColor,
     scaffoldBackgroundColor: backgroundColor,
+    fontFamily: 'Poppins', // Set Poppins as default font
     colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: accentColor,
