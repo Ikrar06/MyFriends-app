@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../screens/splash/splash_screen.dart';
+import '../screens/onboarding/onboarding_screen.dart';
 
 /// App Routes
 ///
@@ -7,6 +9,7 @@ import 'package:flutter/material.dart';
 class AppRoutes {
   // Route Names
   static const String splash = '/';
+  static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';
@@ -33,8 +36,12 @@ class AppRoutes {
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Splash Screen'),
-          // TODO: Replace with SplashScreen() when created by Orang 1
+          builder: (_) => const SplashScreen(),
+        );
+
+      case onboarding:
+        return MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(),
         );
 
       case login:
