@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myfriends_app/screens/auth/profile_screen.dart';
 import 'package:myfriends_app/screens/auth/register_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
@@ -64,8 +65,7 @@ class AppRoutes {
 
       case profile:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Profile Screen'),
-          // TODO: Replace with ProfileScreen() when created by Orang 1
+          builder: (_) => const ProfileScreen(),
         );
 
       case contactList:
