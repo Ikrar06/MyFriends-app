@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myfriends_app/screens/auth/register_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
@@ -52,8 +53,7 @@ class AppRoutes {
 
       case register:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Register Screen'),
-          // TODO: Replace with RegisterScreen() when created by Orang 1
+          builder: (_) => const RegisterScreen(),
         );
 
       case home:
