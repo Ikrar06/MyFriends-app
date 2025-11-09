@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/auth/login_screen.dart';
 
 /// App Routes
 ///
@@ -46,8 +47,7 @@ class AppRoutes {
 
       case login:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Login Screen'),
-          // TODO: Replace with LoginScreen() when created by Orang 1
+          builder: (_) => const LoginScreen(),
         );
 
       case register:
