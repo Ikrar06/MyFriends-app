@@ -13,6 +13,7 @@ import '../screens/group/edit_group_screen.dart';
 import '../screens/group/group_detail_screen.dart';
 import '../models/contact_model.dart';
 import '../models/group_model.dart';
+import '../screens/auth/login_screen.dart';
 
 /// App Routes
 ///
@@ -57,8 +58,7 @@ class AppRoutes {
 
       case login:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Login Screen'),
-          // TODO: Replace with LoginScreen() when created by Orang 1
+          builder: (_) => const LoginScreen(),
         );
 
       case register:

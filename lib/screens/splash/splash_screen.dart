@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
+import 'package:provider/provider.dart';
+import 'package:myfriends_app/providers/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 /// Splash Screen
 ///
@@ -102,52 +106,43 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// Check initial route based on auth and first time status
   Future<void> _checkInitialRoute() async {
-    // Wait for animations to complete + extra delay
+    // Tunggu animasi selesai
     await Future.delayed(const Duration(milliseconds: 2500));
-
     if (!mounted) return;
 
-    // 🔧 DEVELOPMENT MODE: Always show onboarding
-    // TODO: Remove this when ready for production
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
-      return;
-    }
-
-    // PRODUCTION CODE (commented out for development)
-    /*
     try {
-      // Get SharedPreferences instance
-      final prefs = await SharedPreferences.getInstance();
+      // 1. Cek status Auth (Tugas Orang 1)
+      final authProvider = context.read<AuthProvider>();
 
-      // Check if first time user (default: true)
+      // 2. Cek status Onboarding (Tugas Orang 2)
+      final prefs = await SharedPreferences.getInstance();
       final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
-      // TODO: Check authentication status when AuthProvider is ready
-      // final user = context.read<AuthProvider>().currentUser;
-
-      // For now, just check first time status
-      // Later this will be: if (user != null) → home, else if (isFirstTime) → onboarding, else → login
-
-      if (isFirstTime) {
-        // First time user → go to onboarding
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
-        }
+      // --- LOGIKA UTAMA ---
+      if (authProvider.isAuthenticated) {
+        // KASUS 1: Pengguna sudah login.
+        // Langsung arahkan ke Home, tidak peduli status onboarding.
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        
       } else {
-        // Returning user → go to login
-        // (Later: check if logged in → go to home)
-        if (mounted) {
+        // KASUS 2: Pengguna BELUM login.
+        if (isFirstTime) {
+          // Jika ini pertama kali buka aplikasi, arahkan ke Onboarding.
+          Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+        } else {
+          // Jika sudah pernah lihat onboarding, langsung ke Login.
           Navigator.pushReplacementNamed(context, AppRoutes.login);
         }
       }
     } catch (e) {
-      // If error, default to login screen
+      // Jika ada error, arahkan ke login sebagai failsafe.
+      if (kDebugMode) {
+        print('Error di _checkInitialRoute: $e');
+      }
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.login);
       }
     }
-    */
   }
 
   @override
