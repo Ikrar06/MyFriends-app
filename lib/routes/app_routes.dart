@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/contact/contact_list_screen.dart';
+import '../screens/contact/add_contact_screen.dart';
+import '../screens/contact/edit_contact_screen.dart';
+import '../screens/contact/contact_detail_screen.dart';
+import '../screens/contact/favorite_contacts_screen.dart';
+import '../screens/group/group_list_screen.dart';
+import '../screens/group/add_group_screen.dart';
+import '../screens/group/edit_group_screen.dart';
+import '../screens/group/group_detail_screen.dart';
+import '../models/contact_model.dart';
+import '../models/group_model.dart';
 
 /// App Routes
 ///
 /// This file defines all route names and navigation logic.
-/// Screens will be imported here once created by Orang 1 (Backend team).
 class AppRoutes {
   // Route Names
   static const String splash = '/';
@@ -58,8 +69,7 @@ class AppRoutes {
 
       case home:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Home Screen'),
-          // TODO: Replace with HomeScreen() when created by Orang 2
+          builder: (_) => const HomeScreen(),
         );
 
       case profile:
@@ -70,56 +80,71 @@ class AppRoutes {
 
       case contactList:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Contact List'),
-          // TODO: Replace with ContactListScreen() when created by Orang 2
+          builder: (_) => const ContactListScreen(),
         );
 
       case addContact:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Add Contact'),
-          // TODO: Replace with AddContactScreen() when created by Orang 2
+          builder: (_) => const AddContactScreen(),
         );
 
       case editContact:
+        final contact = settings.arguments as Contact?;
+        if (contact == null) {
+          return MaterialPageRoute(
+            builder: (_) => const NotFoundScreen(),
+          );
+        }
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Edit Contact'),
-          // TODO: Replace with EditContactScreen() when created by Orang 2
+          builder: (_) => EditContactScreen(contact: contact),
         );
 
       case contactDetail:
+        final contact = settings.arguments as Contact?;
+        if (contact == null) {
+          return MaterialPageRoute(
+            builder: (_) => const NotFoundScreen(),
+          );
+        }
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Contact Detail'),
-          // TODO: Replace with ContactDetailScreen() when created by Orang 2
+          builder: (_) => ContactDetailScreen(contact: contact),
         );
 
       case favoriteContacts:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Favorite Contacts'),
-          // TODO: Replace with FavoriteContactsScreen() when created by Orang 2
+          builder: (_) => const FavoriteContactsScreen(),
         );
 
       case groupList:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Group List'),
-          // TODO: Replace with GroupListScreen() when created by Orang 2
+          builder: (_) => const GroupListScreen(),
         );
 
       case addGroup:
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Add Group'),
-          // TODO: Replace with AddGroupScreen() when created by Orang 2
+          builder: (_) => const AddGroupScreen(),
         );
 
       case editGroup:
+        final group = settings.arguments as Group?;
+        if (group == null) {
+          return MaterialPageRoute(
+            builder: (_) => const NotFoundScreen(),
+          );
+        }
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Edit Group'),
-          // TODO: Replace with EditGroupScreen() when created by Orang 2
+          builder: (_) => EditGroupScreen(group: group),
         );
 
       case groupDetail:
+        final group = settings.arguments as Group?;
+        if (group == null) {
+          return MaterialPageRoute(
+            builder: (_) => const NotFoundScreen(),
+          );
+        }
         return MaterialPageRoute(
-          builder: (_) => const PlaceholderScreen(title: 'Group Detail'),
-          // TODO: Replace with GroupDetailScreen() when created by Orang 2
+          builder: (_) => GroupDetailScreen(group: group),
         );
 
       default:
