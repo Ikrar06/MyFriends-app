@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../contact/contact_list_screen.dart';
-import '../group/group_list_screen.dart';
-import '../contact/favorite_contacts_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/contact_provider.dart';
-import '../../providers/group_provider.dart';
+import '../../providers/sos_provider.dart';
 import '../../routes/app_routes.dart';
+import '../../widgets/sos_slide_button.dart';
+import '../contact/contact_list_screen.dart';
+import '../group/group_list_screen.dart';
+import '../auth/profile_screen.dart';
 
-/// Home Screen
+/// Home Screen - Main Screen with Bottom Navigation
 ///
-/// Main screen with bottom navigation.
-/// Displays Dashboard, Contact List, Group List, and Favorites tabs.
+/// Clean UI with 4 tabs: Home, Contacts, Groups, Profile
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -22,328 +22,458 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
+  final List<Widget> _screens = [
+    const _HomeTab(),
+    const ContactListScreen(),
+    const GroupListScreen(),
+    const ProfileScreen(),
+  ];
 
-  Widget _getCurrentScreen() {
-    switch (_currentIndex) {
-      case 0:
-        return _buildDashboard();
-      case 1:
-        return const ContactListScreen();
-      case 2:
-        return const GroupListScreen();
-      case 3:
-        return const FavoriteContactsScreen();
-      default:
-        return _buildDashboard();
-    }
-  }
-
-  void _navigateToProfile() {
-    Navigator.pushNamed(context, AppRoutes.profile);
-  }
-
-  Future<void> _confirmSignOut() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          'Keluar',
-          style: TextStyle(fontFamily: 'Poppins'),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: Container(
+        height: 90,
+        decoration: const BoxDecoration(
+          color: Colors.white,
         ),
-        content: const Text(
-          'Apakah Anda yakin ingin keluar?',
-          style: TextStyle(fontFamily: 'Poppins'),
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(icon: Icons.home_rounded, label: 'Home', index: 0),
+              _buildNavItem(icon: Icons.contacts_rounded, label: 'Contacts', index: 1),
+              _buildNavItem(icon: Icons.group_rounded, label: 'Groups', index: 2),
+              _buildNavItem(icon: Icons.person_rounded, label: 'Profile', index: 3),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Batal',
-              style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Keluar',
-              style: TextStyle(fontFamily: 'Poppins', color: Colors.red),
-            ),
-          ),
-        ],
       ),
     );
-
-    if (confirm == true) {
-      if (!mounted) return;
-
-      try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        await authProvider.signOut();
-
-        if (!mounted) return;
-
-        // Navigate to login
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      } catch (e) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal keluar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
-  // Build Dashboard Widget
-  Widget _buildDashboard() {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFE7743),
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final isActive = _currentIndex == index;
+    final color = isActive ? const Color(0xFFFE7743) : const Color(0xFF9E9E9E);
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _currentIndex = index),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Welcome Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFFE7743), Color(0xFFFF9068)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFE7743).withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Selamat Datang! 👋',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Kelola kontak dan grup Anda dengan mudah',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Statistics Section
-            const Text(
-              'Statistik',
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 6),
+            Text(
+              label,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: color,
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Statistics Cards
-            Consumer2<ContactProvider, GroupProvider>(
-              builder: (context, contactProvider, groupProvider, child) {
-                return Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.contacts,
-                            label: 'Total Kontak',
-                            value: '${contactProvider.contactCount}',
-                            color: const Color(0xFFFE7743),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.group,
-                            label: 'Total Grup',
-                            value: '${groupProvider.groupCount}',
-                            color: const Color(0xFF4CAF50),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.star,
-                            label: 'Favorit',
-                            value: '${contactProvider.favoriteCount}',
-                            color: const Color(0xFFFFC107),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.person_add,
-                            label: 'Baru',
-                            value: '0',
-                            color: const Color(0xFF2196F3),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-
-            // Quick Actions Section
-            const Text(
-              'Aksi Cepat',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.person_add,
-                    label: 'Tambah Kontak',
-                    color: const Color(0xFFFE7743),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.addContact),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.group_add,
-                    label: 'Buat Grup',
-                    color: const Color(0xFF4CAF50),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.addGroup),
-                  ),
-                ),
-              ],
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+/// Home Tab - Dashboard
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+
+  Future<void> _handleSOSSend(
+    BuildContext context,
+    SOSProvider sosProvider,
+    ContactProvider contactProvider,
+  ) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.currentUser;
+
+      if (user == null) throw Exception('User tidak login');
+
+      final emergencyContacts = contactProvider.emergencyContacts;
+      if (emergencyContacts.isEmpty) throw Exception('No emergency contacts');
+
+      final phoneNumber = await authProvider.getPhoneNumber();
+      final emergencyContactIds = await sosProvider.getEmergencyContactUserIds(emergencyContacts);
+
+      if (emergencyContactIds.isEmpty) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No emergency contacts registered in the app', style: TextStyle(fontFamily: 'Poppins')),
+            backgroundColor: Colors.orange[700],
+            duration: const Duration(seconds: 3),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 24),
+        );
+        return;
+      }
+
+      await sosProvider.sendSOS(
+        emergencyContactIds: emergencyContactIds,
+        senderName: user.displayName ?? 'Unknown',
+        senderPhone: phoneNumber ?? 'No phone',
+      );
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('SOS sent to ${emergencyContactIds.length} emergency contacts!', style: const TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send SOS: $e', style: const TextStyle(fontFamily: 'Poppins')),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+
+              // Hi, User!
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  final displayName = authProvider.currentUser?.displayName ?? 'User';
+                  return Text(
+                    'Hi, $displayName!',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 48,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black,
+                      height: 1.0,
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 48),
+
+              // Quick Access Section
+              const Text(
+                'Quick Access',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Quick Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _QuickActionCard(
+                      icon: Icons.person_add_rounded,
+                      label: 'Add Contact',
+                      color: const Color(0xFFFE7743),
+                      backgroundColor: const Color(0xFFFFEBE7),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.addContact),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _QuickActionCard(
+                      icon: Icons.group_add_rounded,
+                      label: 'Make Group',
+                      color: const Color(0xFF06923E),
+                      backgroundColor: const Color(0xFFE3F2E8),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.addGroup),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _QuickActionCard(
+                      icon: Icons.edit_rounded,
+                      label: 'Edit Profile',
+                      color: const Color(0xFF725CAD),
+                      backgroundColor: const Color(0xFFDAD3EE),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 48),
+
+              // Emergency contacts section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Emergency contacts',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Consumer<ContactProvider>(
+                    builder: (context, contactProvider, child) {
+                      final count = contactProvider.emergencyCount;
+                      return GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.emergencyContacts),
+                        child: Text(
+                          'View All($count)',
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Emergency Contact List (max 3)
+              Consumer<ContactProvider>(
+                builder: (context, contactProvider, child) {
+                  final emergencyContacts = contactProvider.emergencyContacts.take(3).toList();
+
+                  if (emergencyContacts.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No emergency contacts yet',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    children: emergencyContacts.map((contact) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white, width: 8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFD9D9D9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    contact.nama.isNotEmpty ? contact.nama[0].toUpperCase() : '?',
+                                    style: const TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      contact.nama,
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      contact.nomor,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(
+                                  3,
+                                  (index) => Container(
+                                    width: 6,
+                                    height: 6,
+                                    margin: const EdgeInsets.only(bottom: 6),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFD9D9D9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 48),
+
+              // SOS Slide Button
+              Consumer2<SOSProvider, ContactProvider>(
+                builder: (context, sosProvider, contactProvider, child) {
+                  final hasEmergencyContacts = contactProvider.emergencyContacts.isNotEmpty;
+
+                  return Column(
+                    children: [
+                      if (hasEmergencyContacts)
+                        SOSSlideButton(
+                          isLoading: sosProvider.isSending,
+                          onSlideComplete: () => _handleSOSSend(context, sosProvider, contactProvider),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(88),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Add emergency contacts to use SOS',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.orange[900],
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Your emergency contacts will be notified\nimmediately with your live location.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey[700],
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 40),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildQuickActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color backgroundColor;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.backgroundColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        height: 110,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
@@ -351,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: color,
               ),
@@ -360,226 +490,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: null, // Each screen has its own AppBar
-      body: _getCurrentScreen(),
-      drawer: _buildDrawer(),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        selectedItemColor: const Color(0xFFFE7743),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-        ),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contacts),
-            label: 'Kontak',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Grup',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star),
-            label: 'Favorit',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: Column(
-        children: [
-          // Drawer Header
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              final user = authProvider.currentUser;
-              final displayName = user?.displayName ?? 'User';
-              final email = user?.email ?? '';
-
-              return UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFFE7743),
-                      Color(0xFFFF9068),
-                    ],
-                  ),
-                ),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                    style: const TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFE7743),
-                    ),
-                  ),
-                ),
-                accountName: Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                accountEmail: Text(
-                  email,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Menu Items
-          ListTile(
-            leading: const Icon(Icons.person, color: Color(0xFFFE7743)),
-            title: const Text(
-              'Profil',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-            onTap: _navigateToProfile,
-          ),
-          ListTile(
-            leading: const Icon(Icons.contacts, color: Color(0xFFFE7743)),
-            title: const Text(
-              'Kontak',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 0;
-              });
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.group, color: Color(0xFFFE7743)),
-            title: const Text(
-              'Grup',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 1;
-              });
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.star, color: Color(0xFFFE7743)),
-            title: const Text(
-              'Favorit',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 2;
-              });
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info_outline, color: Color(0xFFFE7743)),
-            title: const Text(
-              'Tentang',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              _showAboutDialog();
-            },
-          ),
-
-          const Spacer(),
-
-          // Sign Out Button
-          Container(
-            margin: const EdgeInsets.all(16),
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _confirmSignOut,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: const Icon(Icons.logout, color: Colors.white),
-              label: const Text(
-                'Keluar',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAboutDialog() {
-    showAboutDialog(
-      context: context,
-      applicationName: 'MyFriends',
-      applicationVersion: '1.0.0',
-      applicationIcon: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(
-          Icons.contacts,
-          size: 32,
-          color: Color(0xFFFE7743),
-        ),
-      ),
-      children: [
-        const Text(
-          'Aplikasi manajemen kontak dan grup yang mudah digunakan.',
-          style: TextStyle(fontFamily: 'Poppins'),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Dibuat dengan Flutter + Firebase',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -24,22 +24,22 @@ class ContactProvider extends ChangeNotifier {
 
   // State
   List<Contact> _contacts = [];
-  List<Contact> _favoriteContacts = [];
+  List<Contact> _emergencyContacts = [];
   bool _isLoading = false;
   String? _errorMessage;
   String? _currentUserId;
 
   // Stream subscriptions
   StreamSubscription<List<Contact>>? _contactsSubscription;
-  StreamSubscription<List<Contact>>? _favoritesSubscription;
+  StreamSubscription<List<Contact>>? _emergencySubscription;
 
   // Getters
   List<Contact> get contacts => _contacts;
-  List<Contact> get favoriteContacts => _favoriteContacts;
+  List<Contact> get emergencyContacts => _emergencyContacts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   int get contactCount => _contacts.length;
-  int get favoriteCount => _favoriteContacts.length;
+  int get emergencyCount => _emergencyContacts.length;
 
   /// Update user ID and refresh contact streams
   ///
@@ -52,13 +52,13 @@ class ContactProvider extends ChangeNotifier {
     if (userId != null) {
       _contactService.setUserId(userId);
       listenToContacts();
-      listenToFavorites();
+      listenToEmergencyContacts();
     } else {
       // User logged out, clear data
       _contacts = [];
-      _favoriteContacts = [];
+      _emergencyContacts = [];
       _contactsSubscription?.cancel();
-      _favoritesSubscription?.cancel();
+      _emergencySubscription?.cancel();
       notifyListeners();
     }
   }
@@ -81,13 +81,13 @@ class ContactProvider extends ChangeNotifier {
     );
   }
 
-  /// Listen to favorite contacts stream
-  void listenToFavorites() {
-    _favoritesSubscription?.cancel();
+  /// Listen to emergency contacts stream
+  void listenToEmergencyContacts() {
+    _emergencySubscription?.cancel();
 
-    _favoritesSubscription = _contactService.getFavoriteContactsStream().listen(
-      (favorites) {
-        _favoriteContacts = favorites;
+    _emergencySubscription = _contactService.getEmergencyContactsStream().listen(
+      (emergencyContacts) {
+        _emergencyContacts = emergencyContacts;
         notifyListeners();
       },
       onError: (error) {
@@ -173,10 +173,10 @@ class ContactProvider extends ChangeNotifier {
     }
   }
 
-  /// Toggle favorite status
-  Future<void> toggleFavorite(String id, bool value) async {
+  /// Toggle emergency contact status
+  Future<void> toggleEmergency(String id, bool value) async {
     try {
-      await _contactService.toggleFavorite(id, value);
+      await _contactService.toggleEmergency(id, value);
       // Stream will automatically update the list
     } catch (e) {
       _errorMessage = e.toString();
@@ -187,7 +187,7 @@ class ContactProvider extends ChangeNotifier {
   /// Refresh contacts manually
   void refresh() {
     listenToContacts();
-    listenToFavorites();
+    listenToEmergencyContacts();
   }
 
   /// Set loading state
@@ -205,7 +205,7 @@ class ContactProvider extends ChangeNotifier {
   @override
   void dispose() {
     _contactsSubscription?.cancel();
-    _favoritesSubscription?.cancel();
+    _emergencySubscription?.cancel();
     super.dispose();
   }
 }

@@ -4,7 +4,6 @@ import '../../models/group_model.dart';
 import '../../models/contact_model.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/contact_provider.dart';
-import '../../widgets/contact_card.dart';
 import '../../routes/app_routes.dart';
 
 /// Group Detail Screen
@@ -60,6 +59,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   }
 
   Future<void> _removeContact(Contact contact) async {
+    // Get provider before async gap
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -92,7 +94,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
     if (confirm == true) {
       try {
-        final groupProvider = Provider.of<GroupProvider>(context, listen: false);
         await groupProvider.removeContactFromGroup(widget.group.id!, contact.id!);
 
         if (!mounted) return;
@@ -114,6 +115,15 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         );
       }
     }
+  }
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.substring(0, name.length > 1 ? 2 : 1).toUpperCase();
   }
 
   @override
@@ -290,9 +300,62 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                               await _removeContact(contact);
                               return false; // Don't auto-dismiss
                             },
-                            child: ContactCard(
-                              contact: contact,
-                              onTap: () => _navigateToContactDetail(contact),
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                leading: CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
+                                  backgroundImage: contact.photoUrl != null && contact.photoUrl!.isNotEmpty
+                                      ? NetworkImage(contact.photoUrl!)
+                                      : null,
+                                  child: contact.photoUrl == null || contact.photoUrl!.isEmpty
+                                      ? Text(
+                                          _getInitials(contact.nama),
+                                          style: const TextStyle(
+                                            color: Color(0xFFFE7743),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                title: Text(
+                                  contact.nama,
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  contact.nomor,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(
+                                    Icons.remove_circle_outline,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _removeContact(contact),
+                                  tooltip: 'Hapus dari grup',
+                                ),
+                                onTap: () => _navigateToContactDetail(contact),
+                              ),
                             ),
                           );
                         },

@@ -340,7 +340,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Mark Your\nFavorites',
+                  'Set Your SOS Contacts',
                   style: TextStyle(
                     fontSize: 44,
                     fontWeight: FontWeight.bold,
@@ -350,7 +350,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Quick access to important contacts by marking them as favorites',
+                  'Quickly alert trusted people in emergencies by adding them as your SOS contacts.',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w400,

@@ -2,21 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/contact_model.dart';
 import '../../providers/contact_provider.dart';
 import '../../routes/app_routes.dart';
 
 /// Contact Detail Screen
 ///
-/// Displays detailed contact information with action buttons.
-/// Allows calling, messaging, emailing, and editing contact.
+/// Clean UI following design specifications
 class ContactDetailScreen extends StatelessWidget {
   final Contact contact;
 
-  const ContactDetailScreen({
-    super.key,
-    required this.contact,
-  });
+  const ContactDetailScreen({super.key, required this.contact});
 
   Future<void> _makePhoneCall(String phoneNumber) async {
     final uri = Uri(scheme: 'tel', path: phoneNumber);
@@ -43,159 +40,362 @@ class ContactDetailScreen extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label disalin ke clipboard'),
+        content: Text('$label copied to clipboard', style: const TextStyle(fontFamily: 'Poppins')),
         backgroundColor: const Color(0xFFFE7743),
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  void _toggleFavorite(BuildContext context) {
+  void _toggleEmergency(BuildContext context) {
     final contactProvider = Provider.of<ContactProvider>(context, listen: false);
-    contactProvider.toggleFavorite(contact.id!, !contact.isFavorite);
+    contactProvider.toggleEmergency(contact.id!, !contact.isEmergency);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          contact.isFavorite
-              ? 'Dihapus dari favorit'
-              : 'Ditambahkan ke favorit',
+          contact.isEmergency ? 'Removed from emergency' : 'Added to emergency',
+          style: const TextStyle(fontFamily: 'Poppins'),
         ),
-        backgroundColor: const Color(0xFFFE7743),
+        backgroundColor: contact.isEmergency ? Colors.grey[700] : const Color(0xFFFFC107),
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  void _navigateToEdit(BuildContext context) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.editContact,
-      arguments: contact,
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Contact', style: TextStyle(fontFamily: 'Poppins')),
+        content: Text('Are you sure you want to delete ${contact.nama}?',
+            style: const TextStyle(fontFamily: 'Poppins')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(fontFamily: 'Poppins')),
+          ),
+        ],
+      ),
     );
-  }
 
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (confirmed == true && context.mounted) {
+      final contactProvider = context.read<ContactProvider>();
+      await contactProvider.deleteContact(contact.id!);
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contact deleted', style: TextStyle(fontFamily: 'Poppins')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-    return name.substring(0, name.length > 1 ? 2 : 1).toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // App Bar with Image
-          SliverAppBar(
-            expandedHeight: 250,
-            pinned: true,
-            backgroundColor: const Color(0xFFFE7743),
-            iconTheme: const IconThemeData(color: Colors.white),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  contact.isFavorite ? Icons.star : Icons.star_border,
-                  color: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with Photo
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFE7743),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
-                onPressed: () => _toggleFavorite(context),
               ),
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
-                onPressed: () => _navigateToEdit(context),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFFFE7743),
-                      Color(0xFFFF9068),
+              child: Column(
+                children: [
+                  // Back and Actions Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              contact.isEmergency ? Icons.star : Icons.star_border,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _toggleEmergency(context),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.editContact,
+                              arguments: contact,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ),
-                child: Center(
-                  child: Hero(
-                    tag: 'contact_${contact.id}',
-                    child: CircleAvatar(
-                      radius: 70,
-                      backgroundColor: Colors.white.withValues(alpha: 0.3),
-                      backgroundImage: contact.photoUrl != null &&
-                              contact.photoUrl!.isNotEmpty
-                          ? NetworkImage(contact.photoUrl!)
-                          : null,
-                      child: contact.photoUrl == null ||
-                              contact.photoUrl!.isEmpty
-                          ? Text(
-                              _getInitials(contact.nama),
-                              style: const TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+
+                  const SizedBox(height: 16),
+
+                  // Photo
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                    ),
+                    child: ClipOval(
+                      child: contact.photoUrl != null && contact.photoUrl!.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: contact.photoUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Text(
+                                  contact.nama.isNotEmpty ? contact.nama[0].toUpperCase() : '?',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             )
-                          : null,
+                          : Center(
+                              child: Text(
+                                contact.nama.isNotEmpty ? contact.nama[0].toUpperCase() : '?',
+                                style: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // Name
+                  Text(
+                    contact.nama,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  if (contact.isEmergency) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFC107),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, color: Colors.white, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Emergency Contact',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Contact Info Cards
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    // Phone Number Card
+                    _buildInfoCard(
+                      context,
+                      icon: Icons.phone,
+                      label: 'Phone Number',
+                      value: contact.nomor,
+                      actions: [
+                        _buildActionButton(
+                          icon: Icons.phone,
+                          label: 'Call',
+                          color: const Color(0xFF4CAF50),
+                          onTap: () => _makePhoneCall(contact.nomor),
+                        ),
+                        _buildActionButton(
+                          icon: Icons.message,
+                          label: 'SMS',
+                          color: const Color(0xFF2196F3),
+                          onTap: () => _sendSMS(contact.nomor),
+                        ),
+                        _buildActionButton(
+                          icon: Icons.content_copy,
+                          label: 'Copy',
+                          color: const Color(0xFF9E9E9E),
+                          onTap: () => _copyToClipboard(context, contact.nomor, 'Phone number'),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Email Card
+                    if (contact.email.isNotEmpty)
+                      _buildInfoCard(
+                        context,
+                        icon: Icons.email,
+                        label: 'Email',
+                        value: contact.email,
+                        actions: [
+                          _buildActionButton(
+                            icon: Icons.email,
+                            label: 'Email',
+                            color: const Color(0xFFFE7743),
+                            onTap: () => _sendEmail(contact.email),
+                          ),
+                          _buildActionButton(
+                            icon: Icons.content_copy,
+                            label: 'Copy',
+                            color: const Color(0xFF9E9E9E),
+                            onTap: () => _copyToClipboard(context, contact.email, 'Email'),
+                          ),
+                        ],
+                      ),
+
+                    const SizedBox(height: 32),
+
+                    // Delete Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _confirmDelete(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text(
+                          'Delete Contact',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required List<Widget> actions,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-
-          // Contact Details
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-
-                // Name
-                Text(
-                  contact.nama,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFE7743).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 32),
-
-                // Action Buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.phone,
-                        label: 'Telepon',
-                        onPressed: () => _makePhoneCall(contact.nomor),
-                      ),
-                      _buildActionButton(
-                        icon: Icons.message,
-                        label: 'SMS',
-                        onPressed: () => _sendSMS(contact.nomor),
-                      ),
-                      _buildActionButton(
-                        icon: Icons.email,
-                        label: 'Email',
-                        onPressed: () => _sendEmail(contact.email),
-                      ),
-                    ],
-                  ),
+                child: Icon(icon, color: const Color(0xFFFE7743), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[600],
                 ),
-                const SizedBox(height: 32),
-
-                // Contact Information
-                _buildInfoSection(context),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
             ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: actions,
           ),
         ],
       ),
@@ -205,139 +405,33 @@ class ContactDetailScreen extends StatelessWidget {
   Widget _buildActionButton({
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
+    required Color color,
+    required VoidCallback onTap,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFE7743),
-            shape: BoxShape.circle,
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ElevatedButton.icon(
+          onPressed: onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          child: IconButton(
-            icon: Icon(icon, color: Colors.white),
-            iconSize: 28,
-            onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoSection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildInfoTile(
-            context: context,
-            icon: Icons.phone,
-            title: 'Nomor Telepon',
-            value: contact.nomor,
-            onTap: () => _makePhoneCall(contact.nomor),
-            onLongPress: () => _copyToClipboard(context, contact.nomor, 'Nomor telepon'),
-          ),
-          const Divider(height: 1),
-          _buildInfoTile(
-            context: context,
-            icon: Icons.email,
-            title: 'Email',
-            value: contact.email,
-            onTap: () => _sendEmail(contact.email),
-            onLongPress: () => _copyToClipboard(context, contact.email, 'Email'),
-          ),
-          const Divider(height: 1),
-          _buildInfoTile(
-            context: context,
-            icon: Icons.calendar_today,
-            title: 'Dibuat',
-            value: _formatDate(contact.createdAt),
-            onTap: null,
-            onLongPress: null,
-          ),
-          const Divider(height: 1),
-          _buildInfoTile(
-            context: context,
-            icon: Icons.update,
-            title: 'Terakhir Diubah',
-            value: _formatDate(contact.updatedAt),
-            onTap: null,
-            onLongPress: null,
-          ),
-        ],
       ),
     );
-  }
-
-  Widget _buildInfoTile({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String value,
-    required VoidCallback? onTap,
-    required VoidCallback? onLongPress,
-  }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          icon,
-          color: const Color(0xFFFE7743),
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-          color: Colors.grey,
-        ),
-      ),
-      subtitle: Text(
-        value,
-        style: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      onTap: onTap,
-      onLongPress: onLongPress,
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }
