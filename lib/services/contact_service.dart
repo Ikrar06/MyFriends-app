@@ -10,18 +10,18 @@ class ContactService {
   final FirebaseFirestore _firestore = FirebaseService.firestore;
   final FirebaseStorage _storage = FirebaseService.storage;
 
-  // Menyimpan ID pengguna yang sedang login
+  // Store the currently logged in user ID
   String? _currentUserId;
 
-  /// Mengatur ID pengguna saat ini.
-  /// Ini PENTING untuk memfilter data kontak hanya milik pengguna yang login.
+  /// Set the current user ID.
+  /// This is IMPORTANT to filter contact data only for the logged in user.
   void setUserId(String? userId) {
     _currentUserId = userId;
   }
 
-  /// Mendapatkan stream (real-time) semua kontak milik pengguna
+  /// Get stream (real-time) of all contacts belonging to user
   Stream<List<Contact>> getContactsStream() {
-    if (_currentUserId == null) return Stream.value([]); // Kembalikan list kosong jika user null
+    if (_currentUserId == null) return Stream.value([]); // Return empty list if user is null
 
     return _firestore
         .collection(FirebaseConstants.contactsCollection)
@@ -33,7 +33,7 @@ class ContactService {
     });
   }
 
-  /// Mendapatkan stream (real-time) kontak emergency milik pengguna
+  /// Get stream (real-time) of emergency contacts belonging to user
   Stream<List<Contact>> getEmergencyContactsStream() {
     if (_currentUserId == null) return Stream.value([]);
 
@@ -48,11 +48,11 @@ class ContactService {
     });
   }
 
-  /// Mencari kontak berdasarkan nama (case-sensitive)
+  /// Search contacts by name (case-sensitive)
   Stream<List<Contact>> searchContactsStream(String query) {
     if (_currentUserId == null) return Stream.value([]);
 
-    // Query Firestore untuk 'starts-with'
+    // Query Firestore for 'starts-with'
     return _firestore
         .collection(FirebaseConstants.contactsCollection)
         .where(FirebaseConstants.userId, isEqualTo: _currentUserId)
@@ -65,19 +65,19 @@ class ContactService {
     });
   }
 
-  /// Menambah kontak baru
+  /// Add new contact
   Future<String> addContact(Contact contact) async {
-    if (_currentUserId == null) throw Exception('Pengguna tidak login');
+    if (_currentUserId == null) throw Exception('User not logged in');
 
     try {
-      // Menambahkan data timestamps dan userId
+      // Add timestamp data and userId
       Map<String, dynamic> contactMap = contact.copyWith(
         userId: _currentUserId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ).toMap();
 
-      // Menggunakan FieldValue.serverTimestamp()
+      // Use FieldValue.serverTimestamp()
       contactMap['createdAt'] = FieldValue.serverTimestamp();
       contactMap['updatedAt'] = FieldValue.serverTimestamp();
 
@@ -86,17 +86,17 @@ class ContactService {
           .add(contactMap);
       return docRef.id;
     } catch (e) {
-      throw Exception('Gagal menambah kontak: $e');
+      throw Exception('Failed to add contact: $e');
     }
   }
 
-  /// Mengupdate kontak yang ada
+  /// Update existing contact
   Future<void> updateContact(Contact contact) async {
-    if (contact.id == null) throw Exception('ID kontak tidak valid');
+    if (contact.id == null) throw Exception('Invalid contact ID');
 
     try {
       Map<String, dynamic> contactMap = contact.toMap();
-      // Hanya update updatedAt
+      // Only update updatedAt
       contactMap['updatedAt'] = FieldValue.serverTimestamp();
 
       await _firestore
@@ -104,11 +104,11 @@ class ContactService {
           .doc(contact.id)
           .update(contactMap);
     } catch (e) {
-      throw Exception('Gagal mengupdate kontak: $e');
+      throw Exception('Failed to update contact: $e');
     }
   }
 
-  /// Mengganti status emergency kontak
+  /// Toggle emergency status of contact
   Future<void> toggleEmergency(String id, bool newValue) async {
     try {
       await _firestore
@@ -119,25 +119,25 @@ class ContactService {
         FirebaseConstants.updatedAt: FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      throw Exception('Gagal mengubah emergency: $e');
+      throw Exception('Failed to change emergency status: $e');
     }
   }
 
-  /// Mengupload foto kontak ke Firebase Storage
+  /// Upload contact photo to Firebase Storage
   Future<String> uploadContactPhoto(File imageFile, String contactId) async {
-    if (_currentUserId == null) throw Exception('Pengguna tidak login');
+    if (_currentUserId == null) throw Exception('User not logged in');
 
     try {
-      // 1. Validasi ukuran (sesuai panduan < 5MB)
+      // 1. Validate size (according to guidelines < 5MB)
       if (imageFile.lengthSync() > 5 * 1024 * 1024) {
-        throw Exception('Ukuran file terlalu besar (Max 5MB)');
+        throw Exception('File size too large (Max 5MB)');
       }
 
-      // 2. Generate filename unik
+      // 2. Generate unique filename
       String fileName =
           'contact_${contactId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
-      // 3. Tentukan path di Storage
+      // 3. Define path in Storage
       Reference storageRef = _storage
           .ref()
           .child(FirebaseConstants.contactPhotosStoragePath)
@@ -148,31 +148,31 @@ class ContactService {
       UploadTask uploadTask = storageRef.putFile(imageFile);
       TaskSnapshot snapshot = await uploadTask;
 
-      // 5. Dapatkan URL download
+      // 5. Get download URL
       String downloadUrl = await snapshot.ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
-      throw Exception('Gagal mengupload foto: $e');
+      throw Exception('Failed to upload photo: $e');
     }
   }
 
-  /// Menghapus foto kontak dari Storage
+  /// Delete contact photo from Storage
   Future<void> deleteContactPhoto(String photoUrl) async {
     try {
-      // Dapatkan referensi dari URL
+      // Get reference from URL
       Reference photoRef = _storage.refFromURL(photoUrl);
       await photoRef.delete();
     } catch (e) {
       if (kDebugMode) {
-        print('Gagal menghapus foto: $e. Mungkin sudah terhapus.');
+        print('Failed to delete photo: $e. May already be deleted.');
       }
     }
   }
 
-  /// Menghapus kontak
+  /// Delete contact
   Future<void> deleteContact(String id) async {
     try {
-      // delete foto di Storage jika ada
+      // Delete photo in Storage if exists
       DocumentSnapshot doc = await _firestore
           .collection(FirebaseConstants.contactsCollection)
           .doc(id)
@@ -185,13 +185,13 @@ class ContactService {
         }
       }
 
-      // delete dokumen
+      // Delete document
       await _firestore
           .collection(FirebaseConstants.contactsCollection)
           .doc(id)
           .delete();
     } catch (e) {
-      throw Exception('Gagal menghapus kontak: $e');
+      throw Exception('Failed to delete contact: $e');
     }
   }
 }

@@ -106,40 +106,40 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// Check initial route based on auth and first time status
   Future<void> _checkInitialRoute() async {
-    // Tunggu animasi selesai
+    // Wait for animations to complete
     await Future.delayed(const Duration(milliseconds: 2500));
     if (!mounted) return;
 
     try {
-      // 1. Cek status Auth (Tugas Orang 1)
+      // 1. Check Auth status (Task Person 1)
       final authProvider = context.read<AuthProvider>();
 
-      // 2. Cek status Onboarding (Tugas Orang 2)
+      // 2. Check Onboarding status (Task Person 2)
       final prefs = await SharedPreferences.getInstance();
       final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
-      // --- LOGIKA UTAMA ---
+      // --- MAIN LOGIC ---
       if (!mounted) return;
 
       if (authProvider.isAuthenticated) {
-        // KASUS 1: Pengguna sudah login.
-        // Langsung arahkan ke Home, tidak peduli status onboarding.
+        // CASE 1: User is already logged in.
+        // Redirect to Home directly, regardless of onboarding status.
         Navigator.pushReplacementNamed(context, AppRoutes.home);
 
       } else {
-        // KASUS 2: Pengguna BELUM login.
+        // CASE 2: User is NOT logged in.
         if (isFirstTime) {
-          // Jika ini pertama kali buka aplikasi, arahkan ke Onboarding.
+          // If this is the first time opening the app, redirect to Onboarding.
           Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
         } else {
-          // Jika sudah pernah lihat onboarding, langsung ke Login.
+          // If they've already seen onboarding, go directly to Login.
           Navigator.pushReplacementNamed(context, AppRoutes.login);
         }
       }
     } catch (e) {
-      // Jika ada error, arahkan ke login sebagai failsafe.
+      // If there's an error, redirect to login as a failsafe.
       if (kDebugMode) {
-        print('Error di _checkInitialRoute: $e');
+        print('Error in _checkInitialRoute: $e');
       }
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.login);

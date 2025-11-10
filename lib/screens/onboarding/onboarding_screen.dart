@@ -340,7 +340,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Set Your SOS Contacts',
+                  'Set Your SOS\nContacts',
                   style: TextStyle(
                     fontSize: 44,
                     fontWeight: FontWeight.bold,

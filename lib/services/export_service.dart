@@ -1,44 +1,44 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // Untuk kDebugMode
+import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:myfriends_app/models/contact_model.dart';
 
 class ExportService {
-  /// Mengekspor daftar kontak ke file CSV.
-  /// Mengembalikan path file yang dibuat.
+  /// Export contact list to CSV file.
+  /// Returns the path of the created file.
   Future<String> exportContactsToCSV(List<Contact> contacts) async {
     try {
-      // 1. Membuat data CSV
-      // Menambahkan header
+      // 1. Create CSV data
+      // Add header
       List<List<dynamic>> rows = [
-        ["Nama", "Nomor", "Email", "Favorit"] // Header
+        ["Name", "Phone", "Email", "Favorite"] // Header
       ];
 
-      // Menambahkan data kontak
+      // Add contact data
       for (var contact in contacts) {
         rows.add([
           contact.nama,
           contact.nomor,
           contact.email,
-          contact.isEmergency ? "Ya" : "Tidak" // Format boolean
+          contact.isEmergency ? "Yes" : "No" // Format boolean
         ]);
       }
 
-      // 2. Mengonversi data list menjadi string CSV
+      // 2. Convert data list to CSV string
       String csvString = const ListToCsvConverter().convert(rows);
 
-      // 3. Mendapatkan direktori untuk menyimpan file
+      // 3. Get directory to save file
       final directory = await getApplicationDocumentsDirectory();
       final path = directory.path;
 
-      // 4. Membuat nama file unik
+      // 4. Create unique filename
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
       final fileName = 'contacts_export_$timestamp.csv';
       final filePath = '$path/$fileName';
 
-      // 5. Menulis string CSV ke file
+      // 5. Write CSV string to file
       final file = File(filePath);
       await file.writeAsString(csvString);
 
@@ -46,30 +46,30 @@ class ExportService {
         print('✅ CSV file created at: $filePath');
       }
 
-      // 6. Mengembalikan path file
+      // 6. Return file path
       return filePath;
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error exporting to CSV: $e');
       }
-      throw Exception('Gagal mengekspor data: $e');
+      throw Exception('Failed to export data: $e');
     }
   }
 
-  /// Membagikan file CSV menggunakan share dialog sistem
+  /// Share CSV file using system share dialog
   Future<void> shareCSVFile(String filePath) async {
     try {
-      // 1. Cek apakah file ada
+      // 1. Check if file exists
       final file = File(filePath);
       if (!await file.exists()) {
-        throw Exception('File tidak ditemukan');
+        throw Exception('File not found');
       }
 
-      // 2. Membagikan file menggunakan SharePlus.instance.share()
+      // 2. Share file using SharePlus.instance.share()
       final result = await share_plus.SharePlus.instance.share(
         share_plus.ShareParams(
           files: [share_plus.XFile(filePath)],
-          text: 'Ini adalah data kontak MyFriends Anda',
+          text: 'This is your MyFriends contact data',
         ),
       );
 
@@ -80,7 +80,7 @@ class ExportService {
       if (kDebugMode) {
         print('❌ Error sharing file: $e');
       }
-      throw Exception('Gagal membagikan file: $e');
+      throw Exception('Failed to share file: $e');
     }
   }
 }

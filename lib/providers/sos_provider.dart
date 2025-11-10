@@ -112,14 +112,14 @@ class SOSProvider with ChangeNotifier {
     required List<String> emergencyContactIds,
     required String senderName,
     required String senderPhone,
-    String message = 'Saya butuh bantuan! Mohon cek lokasi saya.',
+    String message = 'I need help! Please check my location.',
   }) async {
     if (_currentUserId == null) {
-      throw Exception('User tidak login');
+      throw Exception('User not logged in');
     }
 
     if (emergencyContactIds.isEmpty) {
-      throw Exception('Tidak ada kontak darurat yang terdaftar');
+      throw Exception('No emergency contacts registered');
     }
 
     _isSending = true;
@@ -176,7 +176,7 @@ class SOSProvider with ChangeNotifier {
   /// Cancel active SOS
   Future<void> cancelSOS() async {
     if (_activeSOS == null || _activeSOS!.id == null) {
-      throw Exception('Tidak ada SOS aktif untuk dibatalkan');
+      throw Exception('No active SOS to cancel');
     }
 
     try {
@@ -199,7 +199,7 @@ class SOSProvider with ChangeNotifier {
       _activeSOS = null;
       notifyListeners();
     } catch (e) {
-      _errorMessage = 'Gagal membatalkan SOS: $e';
+      _errorMessage = 'Failed to cancel SOS: $e';
       if (kDebugMode) {
         print('❌ Error cancelling SOS: $e');
       }

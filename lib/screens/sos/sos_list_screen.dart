@@ -113,7 +113,7 @@ class SOSListScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Tidak Ada Pesan SOS',
+            'No SOS Messages',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 20,
@@ -123,7 +123,7 @@ class SOSListScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Anda akan melihat pesan SOS dari\nkontak darurat Anda di sini',
+            'You will see SOS messages from\nyour emergency contacts here',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Poppins',
@@ -137,7 +137,7 @@ class SOSListScreen extends StatelessWidget {
   }
 
   Widget _buildSOSCard(BuildContext context, SOSMessage sosMessage) {
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'en_US');
     final isActive = sosMessage.isActive;
 
     return GestureDetector(

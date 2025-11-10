@@ -33,7 +33,7 @@ class SOSDetailScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Tidak bisa membuka Google Maps',
+              'Cannot open Google Maps',
               style: TextStyle(fontFamily: 'Poppins'),
             ),
             backgroundColor: Colors.red,
@@ -60,25 +60,25 @@ class SOSDetailScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text(
-          'Batalkan SOS',
+          'Cancel SOS',
           style: TextStyle(fontFamily: 'Poppins'),
         ),
         content: const Text(
-          'Apakah Anda yakin ingin membatalkan SOS darurat?',
+          'Are you sure you want to cancel the emergency SOS?',
           style: TextStyle(fontFamily: 'Poppins'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text(
-              'Tidak',
+              'No',
               style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Ya, Batalkan',
+              'Yes, Cancel',
               style: TextStyle(fontFamily: 'Poppins', color: Colors.red),
             ),
           ),
@@ -98,7 +98,7 @@ class SOSDetailScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'SOS berhasil dibatalkan',
+              'SOS cancelled successfully',
               style: TextStyle(fontFamily: 'Poppins'),
             ),
             backgroundColor: Colors.green,
@@ -112,7 +112,7 @@ class SOSDetailScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Gagal membatalkan SOS: $e',
+              'Failed to cancel SOS: $e',
               style: const TextStyle(fontFamily: 'Poppins'),
             ),
             backgroundColor: Colors.red,
@@ -126,7 +126,7 @@ class SOSDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final isSender = authProvider.userId == sosMessage.senderId;
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'en_US');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),

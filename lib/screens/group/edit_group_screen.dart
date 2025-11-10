@@ -21,18 +21,18 @@ class EditGroupScreen extends StatefulWidget {
 
 class _EditGroupScreenState extends State<EditGroupScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _namaController;
+  late TextEditingController _nameController;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _namaController = TextEditingController(text: widget.group.nama);
+    _nameController = TextEditingController(text: widget.group.nama);
   }
 
   @override
   void dispose() {
-    _namaController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -49,7 +49,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
       final updatedGroup = widget.group.copyWith(
-        nama: _namaController.text.trim(),
+        nama: _nameController.text.trim(),
         updatedAt: DateTime.now(),
       );
 
@@ -60,7 +60,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Grup berhasil diperbarui'),
+          content: Text('Group updated successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -77,7 +77,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal memperbarui grup: $e'),
+          content: Text('Failed to update group: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -90,18 +90,18 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
-            'Hapus Grup',
+            'Delete Group',
             style: TextStyle(fontFamily: 'Poppins'),
           ),
           content: Text(
-            'Apakah Anda yakin ingin menghapus grup "${widget.group.nama}"?',
+            'Are you sure you want to delete the group "${widget.group.nama}"?',
             style: const TextStyle(fontFamily: 'Poppins'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text(
-                'Batal',
+                'Cancel',
                 style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
               ),
             ),
@@ -111,7 +111,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                 _deleteGroup();
               },
               child: const Text(
-                'Hapus',
+                'Delete',
                 style: TextStyle(fontFamily: 'Poppins', color: Colors.red),
               ),
             ),
@@ -135,7 +135,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Grup berhasil dihapus'),
+          content: Text('Group deleted successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -153,7 +153,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menghapus grup: $e'),
+          content: Text('Failed to delete group: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -166,7 +166,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFE7743),
         title: const Text(
-          'Edit Grup',
+          'Edit Group',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
@@ -204,13 +204,13 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Nama Grup Field
+            // Group Name Field
             TextFormField(
-              controller: _namaController,
+              controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Nama Grup *',
+                labelText: 'Group Name *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan nama grup',
+                hintText: 'Enter group name',
                 prefixIcon: const Icon(Icons.label_outline, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -222,10 +222,10 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nama grup tidak boleh kosong';
+                  return 'Group name cannot be empty';
                 }
                 if (value.trim().length > 50) {
-                  return 'Nama grup maksimal 50 karakter';
+                  return 'Group name maximum 50 characters';
                 }
                 return null;
               },
@@ -254,7 +254,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Informasi Grup',
+                          'Group Information',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w600,
@@ -264,8 +264,8 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildInfoRow('Anggota', '${widget.group.contactIds.length} kontak'),
-                    _buildInfoRow('Dibuat', _formatDate(widget.group.createdAt)),
+                    _buildInfoRow('Members', '${widget.group.contactIds.length} contacts'),
+                    _buildInfoRow('Created', _formatDate(widget.group.createdAt)),
                   ],
                 ),
               ),
@@ -294,7 +294,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                         ),
                       )
                     : const Text(
-                        'Simpan Perubahan',
+                        'Save Changes',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 16,
@@ -339,8 +339,8 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }

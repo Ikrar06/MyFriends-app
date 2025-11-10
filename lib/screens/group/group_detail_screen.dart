@@ -66,25 +66,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text(
-          'Hapus Anggota',
+          'Remove Member',
           style: TextStyle(fontFamily: 'Poppins'),
         ),
         content: Text(
-          'Hapus ${contact.nama} dari grup ini?',
+          'Remove ${contact.nama} from this group?',
           style: const TextStyle(fontFamily: 'Poppins'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text(
-              'Batal',
+              'Cancel',
               style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Hapus',
+              'Remove',
               style: TextStyle(fontFamily: 'Poppins', color: Colors.red),
             ),
           ),
@@ -100,7 +100,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Anggota berhasil dihapus'),
+            content: Text('Member removed successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -109,7 +109,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal menghapus anggota: $e'),
+            content: Text('Failed to remove member: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -225,7 +225,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Anggota (${contacts.length})',
+                                'Members (${contacts.length})',
                                 style: const TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 18,
@@ -242,7 +242,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                               color: Color(0xFFFE7743),
                             ),
                             label: const Text(
-                              'Tambah',
+                              'Add',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 color: Color(0xFFFE7743),
@@ -266,7 +266,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                               ),
                               const SizedBox(height: 16),
                               const Text(
-                                'Belum ada anggota',
+                                'No members yet',
                                 style: TextStyle(
                                   fontFamily: 'Poppins',
                                   color: Colors.grey,
@@ -352,7 +352,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                     color: Colors.red,
                                   ),
                                   onPressed: () => _removeContact(contact),
-                                  tooltip: 'Hapus dari grup',
+                                  tooltip: 'Remove from group',
                                 ),
                                 onTap: () => _navigateToContactDetail(contact),
                               ),
@@ -400,7 +400,7 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${contact.nama} ditambahkan ke grup'),
+          content: Text('${contact.nama} added to group'),
           backgroundColor: Colors.green,
         ),
       );
@@ -411,7 +411,7 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menambahkan: $e'),
+          content: Text('Failed to add: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -446,7 +446,7 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Tambah Anggota',
+                  'Add Member',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 18,
@@ -467,7 +467,7 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Cari kontak...',
+                hintText: 'Search contacts...',
                 hintStyle: const TextStyle(fontFamily: 'Poppins'),
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
@@ -515,8 +515,8 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
                         const SizedBox(height: 16),
                         Text(
                           _searchQuery.isEmpty
-                              ? 'Semua kontak sudah ada di grup'
-                              : 'Kontak tidak ditemukan',
+                              ? 'All contacts are already in the group'
+                              : 'Contact not found',
                           style: const TextStyle(
                             fontFamily: 'Poppins',
                             color: Colors.grey,

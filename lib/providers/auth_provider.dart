@@ -15,7 +15,7 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Stream subscription untuk mendengarkan perubahan auth
+  // Stream subscription to listen for auth changes
   StreamSubscription<User?>? _authSubscription;
 
   // --- Getters ---
@@ -27,7 +27,7 @@ class AuthProvider with ChangeNotifier {
   String? get userEmail => _currentUser?.email;
   String? get displayName => _currentUser?.displayName;
 
-  // Constructor: Langsung mulai mendengarkan status auth
+  // Constructor: Start listening to auth state immediately
   AuthProvider() {
     listenToAuthState();
   }
@@ -54,26 +54,26 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Helper untuk mengatur loading state dan memberi tahu UI
+  /// Helper to set loading state and notify UI
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
-  /// Mendengarkan perubahan status auth (login/logout)
+  /// Listen to auth state changes (login/logout)
   void listenToAuthState() {
-    // Batalkan subscription lama jika ada
+    // Cancel old subscription if exists
     _authSubscription?.cancel();
 
     _authSubscription = _authService.authStateChanges.listen((user) async {
       _currentUser = user;
-      _errorMessage = null; // Hapus error saat status berubah
+      _errorMessage = null; // Clear error when state changes
 
       if (kDebugMode) {
         print('Auth State Changed: ${user?.email}');
       }
 
-      // Save FCM token saat user login
+      // Save FCM token when user logs in
       if (user != null) {
         try {
           await NotificationService().saveFCMToken(userId: user.uid);
@@ -84,7 +84,7 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // Beri tahu semua widget yang mendengarkan bahwa status auth berubah
+      // Notify all listening widgets that auth state has changed
       notifyListeners();
     });
   }
@@ -103,10 +103,10 @@ class AuthProvider with ChangeNotifier {
         await NotificationService().saveFCMToken(userId: user.uid);
       }
 
-      _errorMessage = null; // Sukses
+      _errorMessage = null; // Success
     } catch (e) {
       _errorMessage = e.toString();
-      rethrow; // Lempar error agar UI bisa menangkapnya
+      rethrow; // Throw error so UI can handle it
     } finally {
       _setLoading(false);
     }
@@ -126,7 +126,7 @@ class AuthProvider with ChangeNotifier {
         await NotificationService().saveFCMToken(userId: user.uid);
       }
 
-      _errorMessage = null; // Sukses
+      _errorMessage = null; // Success
     } catch (e) {
       _errorMessage = e.toString();
       rethrow;
@@ -159,12 +159,12 @@ class AuthProvider with ChangeNotifier {
 
     _setLoading(true);
     try {
-      // 1. Update displayName di Firebase Auth
+      // 1. Update displayName in Firebase Auth
       await _currentUser!.updateDisplayName(displayName);
       await _currentUser!.reload();
       _currentUser = FirebaseAuth.instance.currentUser;
 
-      // 2. Update di Firestore users collection
+      // 2. Update in Firestore users collection
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_currentUser!.uid)
@@ -191,7 +191,7 @@ class AuthProvider with ChangeNotifier {
 
     _setLoading(true);
     try {
-      // Update phone number di Firestore users collection
+      // Update phone number in Firestore users collection
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_currentUser!.uid)
@@ -210,7 +210,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Update foto profil
+  /// Update profile photo
   Future<void> updateProfilePhoto(File imageFile) async {
     if (_currentUser == null) {
       throw Exception('User not logged in');
@@ -218,7 +218,7 @@ class AuthProvider with ChangeNotifier {
 
     _setLoading(true);
     try {
-      // 1. Upload foto ke Firebase Storage
+      // 1. Upload photo to Firebase Storage
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('profile_photos')
@@ -227,13 +227,13 @@ class AuthProvider with ChangeNotifier {
       final uploadTask = await storageRef.putFile(imageFile);
       final photoURL = await uploadTask.ref.getDownloadURL();
 
-      // 2. Update photoURL di Firebase Auth
+      // 2. Update photoURL in Firebase Auth
       await _currentUser!.updatePhotoURL(photoURL);
       await _currentUser!.reload();
       _currentUser = FirebaseAuth.instance.currentUser;
 
-      // 3. Update atau buat photoURL di Firestore users collection
-      // Gunakan set dengan merge:true untuk create atau update
+      // 3. Update or create photoURL in Firestore users collection
+      // Use set with merge:true to create or update
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_currentUser!.uid)
@@ -253,7 +253,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Pick image dari galeri atau kamera
+  /// Pick image from gallery or camera
   Future<File?> pickImage({ImageSource source = ImageSource.gallery}) async {
     try {
       final picker = ImagePicker();
@@ -269,12 +269,12 @@ class AuthProvider with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      _errorMessage = 'Gagal memilih foto: $e';
+      _errorMessage = 'Failed to pick photo: $e';
       rethrow;
     }
   }
 
-  /// Membersihkan stream saat provider tidak lagi digunakan
+  /// Clean up stream when provider is no longer used
   @override
   void dispose() {
     _authSubscription?.cancel();
