@@ -20,7 +20,7 @@ class FirebaseConstants {
   static const String nomor = 'nomor';
   // 'email'
   static const String photoUrl = 'photoUrl';
-  static const String isFavorite = 'isFavorite';
+  static const String isEmergency = 'isEmergency'; // Renamed from isFavorite
   static const String userId = 'userId';
   static const String createdAt = 'createdAt';
   static const String updatedAt = 'updatedAt';

@@ -33,14 +33,14 @@ class ContactService {
     });
   }
 
-  /// Mendapatkan stream (real-time) kontak favorit milik pengguna
-  Stream<List<Contact>> getFavoriteContactsStream() {
+  /// Mendapatkan stream (real-time) kontak emergency milik pengguna
+  Stream<List<Contact>> getEmergencyContactsStream() {
     if (_currentUserId == null) return Stream.value([]);
 
     return _firestore
         .collection(FirebaseConstants.contactsCollection)
         .where(FirebaseConstants.userId, isEqualTo: _currentUserId)
-        .where(FirebaseConstants.isFavorite, isEqualTo: true)
+        .where(FirebaseConstants.isEmergency, isEqualTo: true)
         .orderBy(FirebaseConstants.createdAt, descending: true)
         .snapshots()
         .map((snapshot) {
@@ -57,7 +57,7 @@ class ContactService {
         .collection(FirebaseConstants.contactsCollection)
         .where(FirebaseConstants.userId, isEqualTo: _currentUserId)
         .where(FirebaseConstants.nama, isGreaterThanOrEqualTo: query)
-        .where(FirebaseConstants.nama, isLessThan: query + '\uf8ff')
+        .where(FirebaseConstants.nama, isLessThan: '$query\uf8ff')
         .orderBy(FirebaseConstants.nama)
         .snapshots()
         .map((snapshot) {
@@ -108,18 +108,18 @@ class ContactService {
     }
   }
 
-  /// Mengganti status favorit kontak
-  Future<void> toggleFavorite(String id, bool newValue) async {
+  /// Mengganti status emergency kontak
+  Future<void> toggleEmergency(String id, bool newValue) async {
     try {
       await _firestore
           .collection(FirebaseConstants.contactsCollection)
           .doc(id)
           .update({
-        FirebaseConstants.isFavorite: newValue,
+        FirebaseConstants.isEmergency: newValue,
         FirebaseConstants.updatedAt: FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      throw Exception('Gagal mengubah favorit: $e');
+      throw Exception('Gagal mengubah emergency: $e');
     }
   }
 

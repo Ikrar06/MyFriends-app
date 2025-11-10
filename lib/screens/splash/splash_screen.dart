@@ -119,11 +119,13 @@ class _SplashScreenState extends State<SplashScreen>
       final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
       // --- LOGIKA UTAMA ---
+      if (!mounted) return;
+
       if (authProvider.isAuthenticated) {
         // KASUS 1: Pengguna sudah login.
         // Langsung arahkan ke Home, tidak peduli status onboarding.
         Navigator.pushReplacementNamed(context, AppRoutes.home);
-        
+
       } else {
         // KASUS 2: Pengguna BELUM login.
         if (isFirstTime) {

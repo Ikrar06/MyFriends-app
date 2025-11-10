@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../providers/contact_provider.dart';
 import '../../models/contact_model.dart';
 
@@ -19,8 +22,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final _namaController = TextEditingController();
   final _nomorController = TextEditingController();
   final _emailController = TextEditingController();
-  bool _isFavorite = false;
+  bool _isEmergency = false;
   bool _isLoading = false;
+  File? _selectedImage;
 
   @override
   void dispose() {
@@ -28,6 +32,62 @@ class _AddContactScreenState extends State<AddContactScreen> {
     _nomorController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      // Show dialog to choose source
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text(
+            'Select Photo Source',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFFFE7743)),
+                title: const Text('Gallery', style: TextStyle(fontFamily: 'Poppins')),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFFFE7743)),
+                title: const Text('Camera', style: TextStyle(fontFamily: 'Poppins')),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return;
+
+      // Pick image
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to select photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _saveContact() async {
@@ -42,11 +102,25 @@ class _AddContactScreenState extends State<AddContactScreen> {
     try {
       final contactProvider = Provider.of<ContactProvider>(context, listen: false);
 
+      // Upload image to Firebase Storage if selected
+      String? photoUrl;
+      if (_selectedImage != null) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('contact_photos')
+            .child('contact_$timestamp.jpg');
+
+        final uploadTask = await storageRef.putFile(_selectedImage!);
+        photoUrl = await uploadTask.ref.getDownloadURL();
+      }
+
       final contact = Contact(
         nama: _namaController.text.trim(),
         nomor: _nomorController.text.trim(),
         email: _emailController.text.trim(),
-        isFavorite: _isFavorite,
+        isEmergency: _isEmergency,
+        photoUrl: photoUrl,
         userId: '', // Will be set by service
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -59,7 +133,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kontak berhasil ditambahkan'),
+          content: Text('Contact added successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -76,7 +150,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menambahkan kontak: $e'),
+          content: Text('Failed to add contact: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -89,7 +163,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFE7743),
         title: const Text(
-          'Tambah Kontak',
+          'Add Contact',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
@@ -110,11 +184,16 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
-                    child: const Icon(
-                      Icons.person,
-                      size: 60,
-                      color: Color(0xFFFE7743),
-                    ),
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : null,
+                    child: _selectedImage == null
+                        ? const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Color(0xFFFE7743),
+                          )
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
@@ -131,14 +210,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           color: Colors.white,
                           size: 20,
                         ),
-                        onPressed: () {
-                          // TODO: Implement image picker
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Fitur foto akan ditambahkan'),
-                            ),
-                          );
-                        },
+                        onPressed: _pickImage,
                       ),
                     ),
                   ),
@@ -151,9 +223,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
             TextFormField(
               controller: _namaController,
               decoration: InputDecoration(
-                labelText: 'Nama *',
+                labelText: 'Name *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan nama lengkap',
+                hintText: 'Enter full name',
                 prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -165,10 +237,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nama tidak boleh kosong';
+                  return 'Name cannot be empty';
                 }
                 if (value.trim().length > 100) {
-                  return 'Nama maksimal 100 karakter';
+                  return 'Name maximum 100 characters';
                 }
                 return null;
               },
@@ -180,9 +252,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
             TextFormField(
               controller: _nomorController,
               decoration: InputDecoration(
-                labelText: 'Nomor Telepon *',
+                labelText: 'Phone Number *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan nomor telepon',
+                hintText: 'Enter phone number',
                 prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -194,10 +266,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nomor telepon tidak boleh kosong';
+                  return 'Phone number cannot be empty';
                 }
                 if (value.trim().length > 20) {
-                  return 'Nomor telepon maksimal 20 karakter';
+                  return 'Phone number maximum 20 characters';
                 }
                 return null;
               },
@@ -211,7 +283,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               decoration: InputDecoration(
                 labelText: 'Email *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan email',
+                hintText: 'Enter email',
                 prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -223,14 +295,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Email tidak boleh kosong';
+                  return 'Email cannot be empty';
                 }
                 final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                 if (!emailRegex.hasMatch(value.trim())) {
-                  return 'Format email tidak valid';
+                  return 'Invalid email format';
                 }
                 if (value.trim().length > 100) {
-                  return 'Email maksimal 100 karakter';
+                  return 'Email maximum 100 characters';
                 }
                 return null;
               },
@@ -247,24 +319,24 @@ class _AddContactScreenState extends State<AddContactScreen> {
               ),
               child: SwitchListTile(
                 title: const Text(
-                  'Tambahkan ke Favorit',
+                  'Mark as Emergency Contact',
                   style: TextStyle(fontFamily: 'Poppins'),
                 ),
                 subtitle: const Text(
-                  'Kontak favorit akan muncul di bagian atas',
+                  'Emergency contacts will receive SOS messages',
                   style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
                 ),
-                value: _isFavorite,
+                value: _isEmergency,
                 onChanged: (value) {
                   setState(() {
-                    _isFavorite = value;
+                    _isEmergency = value;
                   });
                 },
                 activeTrackColor: const Color(0xFFFE7743).withValues(alpha: 0.5),
                 activeThumbColor: const Color(0xFFFE7743),
                 secondary: Icon(
-                  _isFavorite ? Icons.star : Icons.star_border,
-                  color: _isFavorite ? const Color(0xFFFE7743) : Colors.grey,
+                  _isEmergency ? Icons.star : Icons.star_border,
+                  color: _isEmergency ? const Color(0xFFFE7743) : Colors.grey,
                 ),
               ),
             ),
@@ -292,7 +364,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         ),
                       )
                     : const Text(
-                        'Simpan Kontak',
+                        'Save Contact',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 16,

@@ -6,7 +6,7 @@ class Contact {
   final String nomor; // Phone number (required, max 20) [cite: 265]
   final String email; // Email (required, max 100) [cite: 265]
   final String? photoUrl; // Firebase Storage URL (optional) [cite: 265]
-  final bool isFavorite; // Favorite status [cite: 265]
+  final bool isEmergency; // Emergency contact status (renamed from isFavorite) [cite: 265]
   final String userId; // Owner's Firebase Auth UID [cite: 265]
   final DateTime createdAt; // Creation timestamp [cite: 265]
   final DateTime updatedAt; // Last update timestamp [cite: 265]
@@ -17,7 +17,7 @@ class Contact {
     required this.nomor,
     required this.email,
     this.photoUrl,
-    required this.isFavorite,
+    required this.isEmergency,
     required this.userId,
     required this.createdAt,
     required this.updatedAt,
@@ -31,7 +31,7 @@ class Contact {
       nomor: '',
       email: '',
       photoUrl: null,
-      isFavorite: false,
+      isEmergency: false,
       userId: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -45,7 +45,7 @@ class Contact {
       'nomor': nomor,
       'email': email,
       'photoUrl': photoUrl,
-      'isFavorite': isFavorite,
+      'isEmergency': isEmergency,
       'userId': userId,
       'createdAt': Timestamp.fromDate(createdAt), // Konversi DateTime ke Timestamp
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -61,7 +61,7 @@ class Contact {
       nomor: data['nomor'] ?? '',
       email: data['email'] ?? '',
       photoUrl: data['photoUrl'],
-      isFavorite: data['isFavorite'] ?? false,
+      isEmergency: data['isEmergency'] ?? data['isFavorite'] ?? false, // Support both old and new field
       userId: data['userId'] ?? '',
       // Konversi Timestamp dari Firestore ke DateTime
       createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
@@ -76,7 +76,7 @@ class Contact {
     String? nomor,
     String? email,
     String? photoUrl,
-    bool? isFavorite,
+    bool? isEmergency,
     String? userId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -87,7 +87,7 @@ class Contact {
       nomor: nomor ?? this.nomor,
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
-      isFavorite: isFavorite ?? this.isFavorite,
+      isEmergency: isEmergency ?? this.isEmergency,
       userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -97,6 +97,6 @@ class Contact {
   // Override toString untuk debugging [cite: 272]
   @override
   String toString() {
-    return 'Contact(id: $id, nama: $nama, nomor: $nomor, email: $email, isFavorite: $isFavorite, userId: $userId)';
+    return 'Contact(id: $id, nama: $nama, nomor: $nomor, email: $email, isEmergency: $isEmergency, userId: $userId)';
   }
 }

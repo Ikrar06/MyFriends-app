@@ -1,0 +1,20 @@
+# Node modules
+node_modules/
+
+# Firebase cache
+.firebase/
+
+# Firebase debug log
+firebase-debug.log
+firebase-debug.*.log
+
+# Compiled JavaScript files
+*.js.map
+
+# dotenv environment variables file
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db

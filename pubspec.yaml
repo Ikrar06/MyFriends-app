@@ -40,6 +40,7 @@ dependencies:
   permission_handler: ^11.3.1              # Handle permissions
   shared_preferences: ^2.3.3               # Local storage for first time check
   smooth_page_indicator: ^1.2.0            # Page indicator dots for onboarding
+  geolocator: ^13.0.2                      # ⭐ TAMBAHKAN! Get location untuk SOS
   
   # Export CSV
   csv: ^6.0.0                              # ⭐ TAMBAHKAN! (Generate CSV)

@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../providers/contact_provider.dart';
 import '../../models/contact_model.dart';
 
@@ -24,8 +27,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
   late TextEditingController _namaController;
   late TextEditingController _nomorController;
   late TextEditingController _emailController;
-  late bool _isFavorite;
+  late bool _isEmergency;
   bool _isLoading = false;
+  File? _selectedImage;
+  String? _currentPhotoUrl;
 
   @override
   void initState() {
@@ -34,7 +39,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _namaController = TextEditingController(text: widget.contact.nama);
     _nomorController = TextEditingController(text: widget.contact.nomor);
     _emailController = TextEditingController(text: widget.contact.email);
-    _isFavorite = widget.contact.isFavorite;
+    _isEmergency = widget.contact.isEmergency;
+    _currentPhotoUrl = widget.contact.photoUrl;
   }
 
   @override
@@ -43,6 +49,62 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _nomorController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      // Show dialog to choose source
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text(
+            'Pilih Sumber Foto',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFFFE7743)),
+                title: const Text('Galeri', style: TextStyle(fontFamily: 'Poppins')),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFFFE7743)),
+                title: const Text('Kamera', style: TextStyle(fontFamily: 'Poppins')),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return;
+
+      // Pick image
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memilih foto: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _saveContact() async {
@@ -57,11 +119,25 @@ class _EditContactScreenState extends State<EditContactScreen> {
     try {
       final contactProvider = Provider.of<ContactProvider>(context, listen: false);
 
+      // Upload new image if selected
+      String? photoUrl = _currentPhotoUrl;
+      if (_selectedImage != null) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('contact_photos')
+            .child('contact_$timestamp.jpg');
+
+        final uploadTask = await storageRef.putFile(_selectedImage!);
+        photoUrl = await uploadTask.ref.getDownloadURL();
+      }
+
       final updatedContact = widget.contact.copyWith(
         nama: _namaController.text.trim(),
         nomor: _nomorController.text.trim(),
         email: _emailController.text.trim(),
-        isFavorite: _isFavorite,
+        isEmergency: _isEmergency,
+        photoUrl: photoUrl,
         updatedAt: DateTime.now(),
       );
 
@@ -204,10 +280,12 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
-                    backgroundImage: widget.contact.photoUrl != null && widget.contact.photoUrl!.isNotEmpty
-                        ? NetworkImage(widget.contact.photoUrl!)
-                        : null,
-                    child: widget.contact.photoUrl == null || widget.contact.photoUrl!.isEmpty
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : (_currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty
+                            ? NetworkImage(_currentPhotoUrl!)
+                            : null),
+                    child: _selectedImage == null && (_currentPhotoUrl == null || _currentPhotoUrl!.isEmpty)
                         ? const Icon(
                             Icons.person,
                             size: 60,
@@ -230,14 +308,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                           color: Colors.white,
                           size: 20,
                         ),
-                        onPressed: () {
-                          // TODO: Implement image picker
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Fitur foto akan ditambahkan'),
-                            ),
-                          );
-                        },
+                        onPressed: _pickImage,
                       ),
                     ),
                   ),
@@ -346,24 +417,24 @@ class _EditContactScreenState extends State<EditContactScreen> {
               ),
               child: SwitchListTile(
                 title: const Text(
-                  'Tambahkan ke Favorit',
+                  'Jadikan Kontak Darurat',
                   style: TextStyle(fontFamily: 'Poppins'),
                 ),
                 subtitle: const Text(
-                  'Kontak favorit akan muncul di bagian atas',
+                  'Kontak darurat akan menerima pesan SOS',
                   style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
                 ),
-                value: _isFavorite,
+                value: _isEmergency,
                 onChanged: (value) {
                   setState(() {
-                    _isFavorite = value;
+                    _isEmergency = value;
                   });
                 },
                 activeTrackColor: const Color(0xFFFE7743).withValues(alpha: 0.5),
                 activeThumbColor: const Color(0xFFFE7743),
                 secondary: Icon(
-                  _isFavorite ? Icons.star : Icons.star_border,
-                  color: _isFavorite ? const Color(0xFFFE7743) : Colors.grey,
+                  _isEmergency ? Icons.star : Icons.star_border,
+                  color: _isEmergency ? const Color(0xFFFE7743) : Colors.grey,
                 ),
               ),
             ),

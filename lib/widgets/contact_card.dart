@@ -48,7 +48,7 @@ class ContactCard extends StatelessWidget {
     final String nama = contact.nama;
     final String nomor = contact.nomor;
     final String? photoUrl = contact.photoUrl;
-    final bool isFavorite = contact.isFavorite;
+    final bool isEmergency = contact.isEmergency;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -78,7 +78,7 @@ class ContactCard extends StatelessWidget {
             fontSize: 14,
           ),
         ),
-        trailing: showFavorite && isFavorite
+        trailing: showFavorite && isEmergency
             ? const Icon(
                 Icons.star,
                 color: Colors.amber,

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart'; // Untuk kDebugMode
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:myfriends_app/models/contact_model.dart';
 
 class ExportService {
@@ -22,7 +22,7 @@ class ExportService {
           contact.nama,
           contact.nomor,
           contact.email,
-          contact.isFavorite ? "Ya" : "Tidak" // Format boolean
+          contact.isEmergency ? "Ya" : "Tidak" // Format boolean
         ]);
       }
 
@@ -65,11 +65,17 @@ class ExportService {
         throw Exception('File tidak ditemukan');
       }
 
-      // 2. Membagikan file menggunakan share_plus
-      await Share.shareXFiles(
-        [XFile(filePath)],
-        text: 'Ini adalah data kontak MyFriends Anda',
+      // 2. Membagikan file menggunakan SharePlus.instance.share()
+      final result = await share_plus.SharePlus.instance.share(
+        share_plus.ShareParams(
+          files: [share_plus.XFile(filePath)],
+          text: 'Ini adalah data kontak MyFriends Anda',
+        ),
       );
+
+      if (kDebugMode) {
+        print('✅ Share result: ${result.status}');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error sharing file: $e');

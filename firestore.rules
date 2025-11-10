@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function untuk cek apakah user sudah login
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function untuk cek apakah user adalah pemilik data
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Rules untuk collection users
+    match /users/{userId} {
+      // Allow read jika user sudah login (diperlukan untuk SOS emergency contact lookup)
+      allow read: if isSignedIn();
+
+      // Allow create saat registrasi (user baru bisa membuat dokumen dengan UID sendiri)
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // Allow update jika user adalah pemilik
+      allow update: if isOwner(userId);
+
+      // Tidak allow delete untuk keamanan
+      allow delete: if false;
+    }
+
+    // Rules untuk collection contacts
+    match /contacts/{contactId} {
+      // Allow read, create, update, delete jika user adalah pemilik (berdasarkan field userId)
+      allow read, create, update, delete: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+
+      // Allow create jika data yang dibuat memiliki userId sesuai dengan auth.uid
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+    }
+
+    // Rules untuk collection groups
+    match /groups/{groupId} {
+      // Allow read, create, update, delete jika user adalah pemilik (berdasarkan field userId)
+      allow read, create, update, delete: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+
+      // Allow create jika data yang dibuat memiliki userId sesuai dengan auth.uid
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+    }
+
+    // Rules untuk collection sos_messages
+    match /sos_messages/{sosId} {
+      // Helper function untuk cek apakah user adalah pengirim SOS
+      function isSender() {
+        return isSignedIn() && resource.data.senderId == request.auth.uid;
+      }
+
+      // Helper function untuk cek apakah user adalah kontak darurat dari SOS ini
+      function isEmergencyContact() {
+        return isSignedIn() &&
+          request.auth.uid in resource.data.emergencyContactIds;
+      }
+
+      // Allow create hanya jika senderId sesuai dengan auth.uid
+      allow create: if isSignedIn() &&
+        request.resource.data.senderId == request.auth.uid;
+
+      // Allow read jika user adalah pengirim atau kontak darurat
+      allow read: if isSignedIn() && (
+        resource.data.senderId == request.auth.uid ||
+        request.auth.uid in resource.data.emergencyContactIds
+      );
+
+      // Allow update hanya untuk cancel (ubah status menjadi 'cancelled')
+      // Hanya pengirim yang bisa cancel
+      allow update: if isSignedIn() &&
+        resource.data.senderId == request.auth.uid &&
+        request.resource.data.status == 'cancelled' &&
+        resource.data.status == 'active';
+
+      // Tidak allow delete untuk audit trail
+      allow delete: if false;
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myfriends_app/screens/auth/profile_screen.dart';
 import 'package:myfriends_app/screens/auth/register_screen.dart';
+import 'package:myfriends_app/screens/auth/edit_profile_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -8,13 +9,16 @@ import '../screens/contact/contact_list_screen.dart';
 import '../screens/contact/add_contact_screen.dart';
 import '../screens/contact/edit_contact_screen.dart';
 import '../screens/contact/contact_detail_screen.dart';
-import '../screens/contact/favorite_contacts_screen.dart';
+import '../screens/contact/emergency_contacts_screen.dart';
 import '../screens/group/group_list_screen.dart';
 import '../screens/group/add_group_screen.dart';
 import '../screens/group/edit_group_screen.dart';
 import '../screens/group/group_detail_screen.dart';
+import '../screens/sos/sos_list_screen.dart';
+import '../screens/sos/sos_detail_screen.dart';
 import '../models/contact_model.dart';
 import '../models/group_model.dart';
+import '../models/sos_model.dart';
 import '../screens/auth/login_screen.dart';
 
 /// App Routes
@@ -28,19 +32,24 @@ class AppRoutes {
   static const String register = '/register';
   static const String home = '/home';
   static const String profile = '/profile';
+  static const String editProfile = '/profile/edit';
 
   // Contact Routes
   static const String contactList = '/contacts';
   static const String addContact = '/contacts/add';
   static const String editContact = '/contacts/edit';
   static const String contactDetail = '/contacts/detail';
-  static const String favoriteContacts = '/contacts/favorites';
+  static const String emergencyContacts = '/contacts/favorites';
 
   // Group Routes
   static const String groupList = '/groups';
   static const String addGroup = '/groups/add';
   static const String editGroup = '/groups/edit';
   static const String groupDetail = '/groups/detail';
+
+  // SOS Routes
+  static const String sosList = '/sos/list';
+  static const String sosDetail = '/sos/detail';
 
   /// Generate Route
   ///
@@ -78,6 +87,11 @@ class AppRoutes {
           builder: (_) => const ProfileScreen(),
         );
 
+      case editProfile:
+        return MaterialPageRoute(
+          builder: (_) => const EditProfileScreen(),
+        );
+
       case contactList:
         return MaterialPageRoute(
           builder: (_) => const ContactListScreen(),
@@ -110,9 +124,9 @@ class AppRoutes {
           builder: (_) => ContactDetailScreen(contact: contact),
         );
 
-      case favoriteContacts:
+      case emergencyContacts:
         return MaterialPageRoute(
-          builder: (_) => const FavoriteContactsScreen(),
+          builder: (_) => const EmergencyContactsScreen(),
         );
 
       case groupList:
@@ -145,6 +159,22 @@ class AppRoutes {
         }
         return MaterialPageRoute(
           builder: (_) => GroupDetailScreen(group: group),
+        );
+
+      case sosList:
+        return MaterialPageRoute(
+          builder: (_) => const SOSListScreen(),
+        );
+
+      case sosDetail:
+        final sosMessage = settings.arguments as SOSMessage?;
+        if (sosMessage == null) {
+          return MaterialPageRoute(
+            builder: (_) => const NotFoundScreen(),
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => SOSDetailScreen(sosMessage: sosMessage),
         );
 
       default:

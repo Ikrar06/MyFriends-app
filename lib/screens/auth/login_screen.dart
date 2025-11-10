@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Jika berhasil, provider akan update state
       // dan SplashScreen akan otomatis redirect
       if (mounted) {
-        _showSnackbar('Login berhasil');
+        _showSnackbar('Login successful');
         // Navigasi ke home
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
@@ -71,103 +71,155 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Gunakan Consumer untuk listen ke state 'isLoading' dari AuthProvider
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
-          // Gunakan AppBar agar konsisten
-          appBar: AppBar(
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.black,
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // UI Sesuai Panduan
-                  const SizedBox(height: 40),
-                  Icon(
-                    Icons.people_alt,
-                    size: 80,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Welcome Back',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const Text(
-                    'Login to continue',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Form Field Email
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: Validators.validateEmail, // Dari file Anda
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Form Field Password
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    obscureText: _obscurePassword,
-                    validator: Validators.validatePassword, // Dari file Anda
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Tombol Login
-                  // Menggunakan CustomButton dari Orang 2
-                  CustomButton(
-                    text: 'Login',
-                    onPressed: authProvider.isLoading ? null : _handleLogin,
-                    isLoading: authProvider.isLoading,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Link ke Register
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text("Don't have an account? "),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, AppRoutes.register);
-                        },
-                        child: const Text('Register'),
+                      const SizedBox(height: 60),
+
+                      // Logo & Icon
+                      Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.people_alt,
+                          size: 60,
+                          color: Color(0xFFFE7743),
+                        ),
                       ),
+                      const SizedBox(height: 32),
+
+                      // Welcome Text
+                      const Text(
+                        'Welcome Back!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2D3142),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Sign in to continue',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                          prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFFE7743)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                        validator: Validators.validateEmail,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFE7743)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        obscureText: _obscurePassword,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                        validator: Validators.validatePassword,
+                      ),
+                      const SizedBox(height: 40),
+
+                      // Login Button
+                      CustomButton(
+                        text: 'Sign In',
+                        onPressed: authProvider.isLoading ? null : _handleLogin,
+                        isLoading: authProvider.isLoading,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Register Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Don\'t have an account? ',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.grey,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, AppRoutes.register);
+                            },
+                            child: const Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Color(0xFFFE7743),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

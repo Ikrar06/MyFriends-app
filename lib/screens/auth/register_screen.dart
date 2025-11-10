@@ -40,9 +40,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Validasi form
     if (!_formKey.currentState!.validate()) return;
 
-    // Cek apakah password cocok
+    // Check if passwords match
     if (_passwordController.text != _confirmPasswordController.text) {
-      _showSnackbar('Password tidak cocok', isError: true);
+      _showSnackbar('Passwords do not match', isError: true);
       return;
     }
 
@@ -56,9 +56,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text,
       );
 
-      // Jika berhasil, navigasi ke home
+      // If successful, navigate to home
       if (mounted) {
-        _showSnackbar('Registrasi berhasil');
+        _showSnackbar('Registration successful');
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
@@ -83,130 +83,222 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
+          backgroundColor: Colors.white,
           appBar: AppBar(
-            title: const Text('Register'),
             elevation: 0,
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.black,
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFFFE7743),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Create Account',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const Text(
-                    'Sign up to get started',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Form Field Nama
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Lengkap',
-                      prefixIcon: Icon(Icons.person),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: Validators.validateName, // Dari file Anda
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Form Field Email
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: Validators.validateEmail, // Dari file Anda
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Form Field Password
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    obscureText: _obscurePassword,
-                    validator: Validators.validatePassword, // Dari file Anda
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Form Field Konfirmasi Password
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration: InputDecoration(
-                      labelText: 'Konfirmasi Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    obscureText: _obscureConfirmPassword,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Konfirmasi password tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Tombol Register
-                  CustomButton(
-                    text: 'Register',
-                    onPressed: authProvider.isLoading ? null : _handleRegister,
-                    isLoading: authProvider.isLoading,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Link ke Login
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text("Already have an account? "),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Kembali ke Login
-                        },
-                        child: const Text('Login'),
+                      const SizedBox(height: 20),
+
+                      // Logo & Icon
+                      Container(
+                        height: 100,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.person_add,
+                          size: 50,
+                          color: Color(0xFFFE7743),
+                        ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // Title
+                      const Text(
+                        'Create New Account',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2D3142),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Sign up to get started',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Name Field
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Full Name',
+                          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                          prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFFE7743)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                        validator: Validators.validateName,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                          prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFFE7743)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                        validator: Validators.validateEmail,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFE7743)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        obscureText: _obscurePassword,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                        validator: Validators.validatePassword,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Confirm Password Field
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm Password',
+                          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFE7743)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        obscureText: _obscureConfirmPassword,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Confirm password cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Register Button
+                      CustomButton(
+                        text: 'Sign Up',
+                        onPressed: authProvider.isLoading ? null : _handleRegister,
+                        isLoading: authProvider.isLoading,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Login Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Already have an account? ',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.grey,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text(
+                              'Sign In',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                color: Color(0xFFFE7743),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

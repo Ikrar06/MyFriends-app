@@ -1,6 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Background message handler - harus top-level function
 @pragma('vm:entry-point')
@@ -20,8 +23,14 @@ class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   bool _isInitialized = false;
+
+  // Callback untuk navigation
+  Function(String?)? onNotificationTap;
+  Function(Map<String, dynamic>)? onNotificationOpened;
 
   /// Initialize notification service
   Future<void> initialize() async {
@@ -182,8 +191,28 @@ class NotificationService {
     if (kDebugMode) {
       print('📱 Notification tapped: ${response.payload}');
     }
-    // TODO: Navigate to specific screen based on payload
-    // Example: Navigator.push(context, MaterialPageRoute(...))
+
+    // Parse payload untuk SOS navigation
+    if (response.payload != null && response.payload!.isNotEmpty) {
+      try {
+        // Payload format: "sosId|googleMapsUrl" or just "sosId"
+        final parts = response.payload!.split('|');
+        final sosId = parts[0];
+
+        if (kDebugMode) {
+          print('🔔 SOS ID from notification: $sosId');
+        }
+
+        // Call navigation callback with sosId
+        if (onNotificationTap != null) {
+          onNotificationTap!(sosId);
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('❌ Error parsing notification payload: $e');
+        }
+      }
+    }
   }
 
   /// Handle notification opened from background/terminated
@@ -191,17 +220,49 @@ class NotificationService {
     if (kDebugMode) {
       print('📱 Notification opened: ${message.data}');
     }
-    // TODO: Navigate to specific screen based on data
+
+    // Extract sosId from message data
+    final sosId = message.data['sosId'];
+    if (sosId != null && sosId.isNotEmpty) {
+      if (kDebugMode) {
+        print('🔔 SOS ID from FCM: $sosId');
+      }
+
+      // Call navigation callback with sosId
+      if (onNotificationTap != null) {
+        onNotificationTap!(sosId);
+      }
+    }
+
+    // Also call data callback if set
+    if (onNotificationOpened != null) {
+      onNotificationOpened!(message.data);
+    }
   }
 
-  /// Get FCM token
+  /// Get FCM token and save to Firestore
   Future<String?> getToken() async {
     try {
       final token = await _messaging.getToken();
       if (kDebugMode) {
         print('🔑 FCM Token: $token');
       }
-      // TODO: Save token ke Firestore (user document)
+
+      // Save token ke Firestore untuk current user
+      if (token != null) {
+        final user = _auth.currentUser;
+        if (user != null) {
+          await _firestore.collection('users').doc(user.uid).set({
+            'fcmToken': token,
+            'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+          if (kDebugMode) {
+            print('✅ FCM Token saved to Firestore');
+          }
+        }
+      }
+
       return token;
     } catch (e) {
       if (kDebugMode) {
@@ -211,10 +272,55 @@ class NotificationService {
     }
   }
 
+  /// Save FCM token untuk specific user
+  ///
+  /// Dipanggil saat login atau saat token di-refresh
+  Future<void> saveFCMToken({String? userId}) async {
+    try {
+      final token = await _messaging.getToken();
+      if (token == null) {
+        if (kDebugMode) {
+          print('⚠️ FCM Token is null, cannot save');
+        }
+        return;
+      }
+
+      final uid = userId ?? _auth.currentUser?.uid;
+      if (uid == null) {
+        if (kDebugMode) {
+          print('⚠️ User ID is null, cannot save FCM token');
+        }
+        return;
+      }
+
+      await _firestore.collection('users').doc(uid).set({
+        'fcmToken': token,
+        'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (kDebugMode) {
+        print('✅ FCM Token saved for user: $uid');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error saving FCM token: $e');
+      }
+    }
+  }
+
   /// Delete FCM token (untuk logout)
   Future<void> deleteToken() async {
     try {
       await _messaging.deleteToken();
+
+      // Remove token dari Firestore
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'fcmToken': FieldValue.delete(),
+        });
+      }
+
       if (kDebugMode) {
         print('🗑️ FCM Token deleted');
       }
@@ -250,6 +356,115 @@ class NotificationService {
       if (kDebugMode) {
         print('❌ Error unsubscribing from topic: $e');
       }
+    }
+  }
+
+  /// Show SOS notification with high priority and vibration
+  ///
+  /// Used for emergency SOS alerts
+  Future<void> showSOSNotification({
+    required String title,
+    required String body,
+    required String sosId,
+    required String senderName,
+    required String googleMapsUrl,
+  }) async {
+    try {
+      final androidDetails = AndroidNotificationDetails(
+        'sos_channel', // Separate channel for SOS
+        'SOS Emergency Alerts',
+        channelDescription: 'Critical emergency SOS notifications',
+        importance: Importance.max,
+        priority: Priority.max,
+        playSound: true,
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]), // Custom vibration
+        ongoing: true, // Persistent notification
+        autoCancel: false, // Don't auto-dismiss
+        fullScreenIntent: true, // Show on lock screen
+        category: AndroidNotificationCategory.alarm,
+        icon: '@mipmap/ic_launcher',
+        color: const Color(0xFFFF0000), // Red color for emergency
+        actions: <AndroidNotificationAction>[
+          const AndroidNotificationAction(
+            'view_location',
+            'Lihat Lokasi',
+            showsUserInterface: true,
+          ),
+          const AndroidNotificationAction(
+            'dismiss',
+            'Tutup',
+            cancelNotification: true,
+          ),
+        ],
+      );
+
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        interruptionLevel: InterruptionLevel.critical, // Critical alert for iOS
+        sound: 'default',
+      );
+
+      // Can't use const because androidDetails is not const
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      await _localNotifications.show(
+        sosId.hashCode, // Use SOS ID as notification ID
+        title,
+        body,
+        details,
+        payload: '$sosId|$googleMapsUrl', // Include SOS ID and URL in payload
+      );
+
+      if (kDebugMode) {
+        print('🚨 SOS Notification shown for: $senderName');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error showing SOS notification: $e');
+      }
+    }
+  }
+
+  /// Cancel SOS notification
+  Future<void> cancelSOSNotification(String sosId) async {
+    try {
+      await _localNotifications.cancel(sosId.hashCode);
+      if (kDebugMode) {
+        print('✅ SOS Notification cancelled');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error cancelling SOS notification: $e');
+      }
+    }
+  }
+
+  /// Create SOS notification channel (Android)
+  Future<void> createSOSChannel() async {
+    final sosChannel = AndroidNotificationChannel(
+      'sos_channel',
+      'SOS Emergency Alerts',
+      description: 'Critical emergency SOS notifications',
+      importance: Importance.max,
+      playSound: true,
+      showBadge: true,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(sosChannel);
+
+    if (kDebugMode) {
+      print('✅ SOS Notification Channel created');
     }
   }
 }
