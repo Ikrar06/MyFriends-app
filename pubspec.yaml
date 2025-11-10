@@ -1,5 +1,5 @@
 name: myfriends_app
-description: "Aplikasi manajemen kontak dengan Firebase"
+description: "An emergency SOS app that instantly notifies your trusted contacts with your live location."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -14,38 +14,38 @@ dependencies:
   # UI Components
   cupertino_icons: ^1.0.8
   
-  # Firebase Core (WAJIB - harus paling atas)
+  # Firebase Core 
   firebase_core: ^4.2.0
   
   # Firebase Services
-  firebase_auth: ^6.1.1                    # Authentication
-  cloud_firestore: ^6.0.3                  # Database
-  firebase_storage: ^13.0.3                # Storage untuk foto
-  firebase_messaging: ^16.0.3              # ⭐ PUSH NOTIFICATIONS (TAMBAHKAN!)
+  firebase_auth: ^6.1.1                    
+  cloud_firestore: ^6.0.3                 
+  firebase_storage: ^13.0.3                
+  firebase_messaging: ^16.0.3             
   
   # State Management
-  provider: ^6.1.2                         # ⭐ TAMBAHKAN!
+  provider: ^6.1.2                       
   
   # Image Handling
-  image_picker: ^1.1.2                     # ⭐ TAMBAHKAN! (Pick foto dari gallery/camera)
-  cached_network_image: ^3.4.1            # ⭐ TAMBAHKAN! (Cache foto dari Firebase)
-  image: ^4.2.0                            # ⭐ TAMBAHKAN! (Compress image)
+  image_picker: ^1.1.2                     
+  cached_network_image: ^3.4.1            
+  image: ^4.2.0                           
   
   # Local Notifications (untuk FCM foreground)
-  flutter_local_notifications: ^18.0.1     # ⭐ TAMBAHKAN!
+  flutter_local_notifications: ^18.0.1    
   
   # Utilities
-  intl: ^0.19.0                            # Date formatting
-  url_launcher: ^6.3.1                     # Launch phone/email
-  permission_handler: ^11.3.1              # Handle permissions
-  shared_preferences: ^2.3.3               # Local storage for first time check
-  smooth_page_indicator: ^1.2.0            # Page indicator dots for onboarding
-  geolocator: ^13.0.2                      # ⭐ TAMBAHKAN! Get location untuk SOS
+  intl: ^0.19.0                          
+  url_launcher: ^6.3.1                     
+  permission_handler: ^11.3.1             
+  shared_preferences: ^2.3.3              
+  smooth_page_indicator: ^1.2.0            
+  geolocator: ^13.0.2                      
   
   # Export CSV
-  csv: ^6.0.0                              # ⭐ TAMBAHKAN! (Generate CSV)
-  path_provider: ^2.1.5                    # ⭐ TAMBAHKAN! (Get file path)
-  share_plus: ^12.0.1                       # ⭐ TAMBAHKAN! (Share file)
+  csv: ^6.0.0                              
+  path_provider: ^2.1.5                    
+  share_plus: ^12.0.1                       
 
 dev_dependencies:
   flutter_test:

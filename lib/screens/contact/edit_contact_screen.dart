@@ -24,8 +24,8 @@ class EditContactScreen extends StatefulWidget {
 
 class _EditContactScreenState extends State<EditContactScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _namaController;
-  late TextEditingController _nomorController;
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late bool _isEmergency;
   bool _isLoading = false;
@@ -36,8 +36,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
   void initState() {
     super.initState();
     // Initialize controllers with existing contact data
-    _namaController = TextEditingController(text: widget.contact.nama);
-    _nomorController = TextEditingController(text: widget.contact.nomor);
+    _nameController = TextEditingController(text: widget.contact.nama);
+    _phoneController = TextEditingController(text: widget.contact.nomor);
     _emailController = TextEditingController(text: widget.contact.email);
     _isEmergency = widget.contact.isEmergency;
     _currentPhotoUrl = widget.contact.photoUrl;
@@ -45,8 +45,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
 
   @override
   void dispose() {
-    _namaController.dispose();
-    _nomorController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
   }
@@ -58,7 +58,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text(
-            'Pilih Sumber Foto',
+            'Choose Photo Source',
             style: TextStyle(fontFamily: 'Poppins'),
           ),
           content: Column(
@@ -66,12 +66,12 @@ class _EditContactScreenState extends State<EditContactScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library, color: Color(0xFFFE7743)),
-                title: const Text('Galeri', style: TextStyle(fontFamily: 'Poppins')),
+                title: const Text('Gallery', style: TextStyle(fontFamily: 'Poppins')),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: Color(0xFFFE7743)),
-                title: const Text('Kamera', style: TextStyle(fontFamily: 'Poppins')),
+                title: const Text('Camera', style: TextStyle(fontFamily: 'Poppins')),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
             ],
@@ -100,7 +100,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal memilih foto: $e'),
+          content: Text('Failed to pick photo: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -133,8 +133,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
       }
 
       final updatedContact = widget.contact.copyWith(
-        nama: _namaController.text.trim(),
-        nomor: _nomorController.text.trim(),
+        nama: _nameController.text.trim(),
+        nomor: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         isEmergency: _isEmergency,
         photoUrl: photoUrl,
@@ -148,7 +148,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kontak berhasil diperbarui'),
+          content: Text('Contact updated successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -165,7 +165,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal memperbarui kontak: $e'),
+          content: Text('Failed to update contact: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -178,18 +178,18 @@ class _EditContactScreenState extends State<EditContactScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
-            'Hapus Kontak',
+            'Delete Contact',
             style: TextStyle(fontFamily: 'Poppins'),
           ),
           content: Text(
-            'Apakah Anda yakin ingin menghapus kontak "${widget.contact.nama}"?',
+            'Are you sure you want to delete the contact "${widget.contact.nama}"?',
             style: const TextStyle(fontFamily: 'Poppins'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text(
-                'Batal',
+                'Cancel',
                 style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
               ),
             ),
@@ -199,7 +199,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 _deleteContact();
               },
               child: const Text(
-                'Hapus',
+                'Delete',
                 style: TextStyle(fontFamily: 'Poppins', color: Colors.red),
               ),
             ),
@@ -223,7 +223,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kontak berhasil dihapus'),
+          content: Text('Contact deleted successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -240,7 +240,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menghapus kontak: $e'),
+          content: Text('Failed to delete contact: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -253,7 +253,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFE7743),
         title: const Text(
-          'Edit Kontak',
+          'Edit Contact',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
@@ -317,13 +317,13 @@ class _EditContactScreenState extends State<EditContactScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Nama Field
+            // Name Field
             TextFormField(
-              controller: _namaController,
+              controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Nama *',
+                labelText: 'Name *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan nama lengkap',
+                hintText: 'Enter full name',
                 prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -335,10 +335,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nama tidak boleh kosong';
+                  return 'Name cannot be empty';
                 }
                 if (value.trim().length > 100) {
-                  return 'Nama maksimal 100 karakter';
+                  return 'Name maximum 100 characters';
                 }
                 return null;
               },
@@ -346,13 +346,13 @@ class _EditContactScreenState extends State<EditContactScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Nomor Field
+            // Phone Number Field
             TextFormField(
-              controller: _nomorController,
+              controller: _phoneController,
               decoration: InputDecoration(
-                labelText: 'Nomor Telepon *',
+                labelText: 'Phone Number *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan nomor telepon',
+                hintText: 'Enter phone number',
                 prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -364,10 +364,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nomor telepon tidak boleh kosong';
+                  return 'Phone number cannot be empty';
                 }
                 if (value.trim().length > 20) {
-                  return 'Nomor telepon maksimal 20 karakter';
+                  return 'Phone number maximum 20 characters';
                 }
                 return null;
               },
@@ -381,7 +381,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               decoration: InputDecoration(
                 labelText: 'Email *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan email',
+                hintText: 'Enter email',
                 prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -393,14 +393,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Email tidak boleh kosong';
+                  return 'Email cannot be empty';
                 }
                 final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                 if (!emailRegex.hasMatch(value.trim())) {
-                  return 'Format email tidak valid';
+                  return 'Invalid email format';
                 }
                 if (value.trim().length > 100) {
-                  return 'Email maksimal 100 karakter';
+                  return 'Email maximum 100 characters';
                 }
                 return null;
               },
@@ -408,7 +408,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Favorite Toggle
+            // Emergency Contact Toggle
             Card(
               elevation: 0,
               color: Colors.grey[100],
@@ -417,11 +417,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
               ),
               child: SwitchListTile(
                 title: const Text(
-                  'Jadikan Kontak Darurat',
+                  'Set as Emergency Contact',
                   style: TextStyle(fontFamily: 'Poppins'),
                 ),
                 subtitle: const Text(
-                  'Kontak darurat akan menerima pesan SOS',
+                  'Emergency contacts will receive SOS messages',
                   style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
                 ),
                 value: _isEmergency,
@@ -462,7 +462,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                         ),
                       )
                     : const Text(
-                        'Simpan Perubahan',
+                        'Save Changes',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 16,

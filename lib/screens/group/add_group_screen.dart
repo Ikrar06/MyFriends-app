@@ -16,12 +16,12 @@ class AddGroupScreen extends StatefulWidget {
 
 class _AddGroupScreenState extends State<AddGroupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _namaController = TextEditingController();
+  final _nameController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _namaController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -38,7 +38,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
       final group = Group(
-        nama: _namaController.text.trim(),
+        nama: _nameController.text.trim(),
         colorHex: '#FE7743', // Default orange color
         contactIds: [], // Empty initially
         userId: '', // Will be set by service
@@ -53,7 +53,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Grup berhasil dibuat'),
+          content: Text('Group created successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -70,7 +70,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal membuat grup: $e'),
+          content: Text('Failed to create group: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -83,7 +83,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFE7743),
         title: const Text(
-          'Buat Grup Baru',
+          'Create New Group',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
@@ -115,13 +115,13 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Nama Grup Field
+            // Group Name Field
             TextFormField(
-              controller: _namaController,
+              controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Nama Grup *',
+                labelText: 'Group Name *',
                 labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Masukkan nama grup',
+                hintText: 'Enter group name',
                 prefixIcon: const Icon(Icons.label_outline, color: Color(0xFFFE7743)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -133,10 +133,10 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Nama grup tidak boleh kosong';
+                  return 'Group name cannot be empty';
                 }
                 if (value.trim().length > 50) {
-                  return 'Nama grup maksimal 50 karakter';
+                  return 'Group name maximum 50 characters';
                 }
                 return null;
               },
@@ -162,7 +162,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Anda dapat menambahkan anggota setelah grup dibuat',
+                        'You can add members after the group is created',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 13,
@@ -198,7 +198,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                         ),
                       )
                     : const Text(
-                        'Buat Grup',
+                        'Create Group',
                         style: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 16,

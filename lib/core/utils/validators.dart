@@ -1,56 +1,56 @@
 class Validators {
-  // Validator untuk nama (digunakan di Register dan Contact)
+  // Validator for name (used in Register and Contact)
   static String? validateName(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Nama tidak boleh kosong';
+      return 'Name cannot be empty';
     }
     if (value.length < 3) {
-      return 'Nama harus memiliki minimal 3 karakter';
+      return 'Name must have at least 3 characters';
     }
     return null;
   }
 
-  // Validator untuk email
+  // Validator for email
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Email tidak boleh kosong';
+      return 'Email cannot be empty';
     }
-    // Regex standar untuk validasi email
+    // Standard regex for email validation
     final RegExp emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     if (!emailRegex.hasMatch(value)) {
-      return 'Format email tidak valid';
+      return 'Invalid email format';
     }
     return null;
   }
 
-  // Validator untuk password (digunakan di Login dan Register)
+  // Validator for password (used in Login and Register)
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Password tidak boleh kosong';
+      return 'Password cannot be empty';
     }
     if (value.length < 6) {
-      return 'Password terlalu lemah (min 6 karakter)';
+      return 'Password too weak (min 6 characters)';
     }
     return null;
   }
 
-  // Validator untuk nomor telepon
+  // Validator for phone number
   static String? validatePhone(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Nomor telepon tidak boleh kosong';
+      return 'Phone number cannot be empty';
     }
     if (value.length < 10) {
-      return 'Nomor telepon tidak valid';
+      return 'Invalid phone number';
     }
     return null;
   }
 
-  // Validator umum untuk field yang tidak boleh kosong
+  // General validator for non-empty fields
   static String? validateNotEmpty(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
-      return '$fieldName tidak boleh kosong';
+      return '$fieldName cannot be empty';
     }
     return null;
   }

@@ -30,8 +30,8 @@ class LocationService {
       bool serviceEnabled = await isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception(
-          'Layanan lokasi tidak aktif. '
-          'Silakan aktifkan GPS di pengaturan perangkat.',
+          'Location service is not active. '
+          'Please enable GPS in device settings.',
         );
       }
 
@@ -43,8 +43,8 @@ class LocationService {
         permission = await requestPermission();
         if (permission == LocationPermission.denied) {
           throw Exception(
-            'Izin akses lokasi ditolak. '
-            'Aplikasi memerlukan akses lokasi untuk mengirim SOS.',
+            'Location access permission denied. '
+            'The app requires location access to send SOS.',
           );
         }
       }
@@ -52,8 +52,8 @@ class LocationService {
       // 4. Handle permanently denied
       if (permission == LocationPermission.deniedForever) {
         throw Exception(
-          'Izin akses lokasi ditolak permanen. '
-          'Silakan aktifkan di pengaturan aplikasi.',
+          'Location access permission permanently denied. '
+          'Please enable it in app settings.',
         );
       }
 
