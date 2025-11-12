@@ -133,7 +133,7 @@ class _SOSSlideButtonState extends State<SOSSlideButton>
                 opacity: _dragPosition >= maxDrag * 0.8 ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 200),
                 child: const Text(
-                  'SOS Terkirim!',
+                  'SOS Sent!',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 16,

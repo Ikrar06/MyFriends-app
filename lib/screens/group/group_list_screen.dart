@@ -53,7 +53,7 @@ class GroupListScreen extends StatelessWidget {
                           Icon(Icons.group_outlined, size: 80, color: Colors.grey[300]),
                           const SizedBox(height: 16),
                           Text(
-                            'Belum ada grup',
+                            'No groups yet',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 18,
@@ -63,7 +63,7 @@ class GroupListScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Tekan tombol + untuk membuat grup',
+                            'Press the + button to create a group',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 14,

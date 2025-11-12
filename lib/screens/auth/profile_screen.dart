@@ -537,12 +537,12 @@ class ProfileScreen extends StatelessWidget {
       ),
       children: const [
         Text(
-          'Aplikasi manajemen kontak dan grup dengan fitur SOS darurat untuk keamanan Anda.',
+          'Contact and group management app with emergency SOS feature for your safety.',
           style: TextStyle(fontFamily: 'Poppins'),
         ),
         SizedBox(height: 16),
         Text(
-          '📱 Dibuat dengan Flutter + Firebase\n🔥 Realtime updates & Push notifications\n🆘 Emergency SOS system',
+          '📱 Built with Flutter + Firebase\n🔥 Realtime updates & Push notifications\n🆘 Emergency SOS system',
           style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey),
         ),
       ],

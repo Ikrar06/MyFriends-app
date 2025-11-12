@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
@@ -84,6 +85,7 @@ class NotificationService {
 
   /// Setup Android notification channel
   Future<void> _setupAndroidNotificationChannel() async {
+    // Regular high importance channel
     const androidChannel = AndroidNotificationChannel(
       'high_importance_channel', // id (harus sama dengan di AndroidManifest)
       'High Importance Notifications', // name
@@ -94,10 +96,25 @@ class NotificationService {
       enableVibration: true,
     );
 
-    await _localNotifications
+    // SOS Emergency channel (max priority)
+    const sosChannel = AndroidNotificationChannel(
+      'sos_channel',
+      'SOS Emergency Alerts',
+      description: 'Critical SOS emergency notifications with persistent alerts',
+      importance: Importance.max,
+      playSound: true,
+      showBadge: true,
+      enableVibration: true,
+      enableLights: true,
+      ledColor: Color(0xFFFF3B30),
+    );
+
+    final androidImplementation = _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(androidChannel);
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidImplementation?.createNotificationChannel(androidChannel);
+    await androidImplementation?.createNotificationChannel(sosChannel);
   }
 
   /// Initialize local notifications plugin
@@ -158,31 +175,200 @@ class NotificationService {
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     final android = message.notification?.android;
+    final data = message.data;
 
     if (notification != null) {
-      await _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription: 'This channel is used for important notifications.',
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: android?.smallIcon ?? '@mipmap/ic_launcher',
-            playSound: true,
-            enableVibration: true,
+      // Check notification type
+      final notificationType = data['type'] ?? '';
+
+      // Check if SOS was cancelled or resolved - stop auto-repeat timer
+      if (notificationType == 'sos_cancelled' || notificationType == 'sos_resolved') {
+        // Stop SOS alert timer
+        await stopSOSAlert();
+
+        if (kDebugMode) {
+          print('🔕 Stopped SOS alert due to: $notificationType');
+        }
+      }
+
+      // Check if this is an active SOS notification
+      final isSOS = notificationType == 'sos' ||
+                    notification.title?.contains('SOS') == true ||
+                    notification.title?.contains('EMERGENCY') == true;
+
+      if (isSOS) {
+        // Show persistent SOS notification with ongoing alarm
+        await _showPersistentSOSNotification(notification, data);
+      } else {
+        // Regular notification (including cancelled/resolved)
+        await _localNotifications.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              'high_importance_channel',
+              'High Importance Notifications',
+              channelDescription: 'This channel is used for important notifications.',
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: android?.smallIcon ?? '@mipmap/ic_launcher',
+              playSound: true,
+              enableVibration: true,
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
           ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+          payload: message.data.toString(),
+        );
+      }
+    }
+  }
+
+  /// Show persistent SOS notification with vibration pattern
+  Future<void> _showPersistentSOSNotification(
+    RemoteNotification notification,
+    Map<String, dynamic> data,
+  ) async {
+    // Check if SOS was already stopped
+    if (_isSOSAlertStopped) {
+      if (kDebugMode) {
+        print('⏹️ SOS alert is stopped, not showing notification');
+      }
+      return;
+    }
+
+    const sosNotificationId = 99999; // Fixed ID for SOS notifications
+
+    // Vibration pattern: wait 0ms, vibrate 1000ms, wait 500ms, vibrate 1000ms
+    final vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
+
+    await _localNotifications.show(
+      sosNotificationId,
+      '🆘 ${notification.title}',
+      notification.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'sos_channel',
+          'SOS Emergency Alerts',
+          channelDescription: 'Critical SOS emergency notifications',
+          importance: Importance.max,
+          priority: Priority.max,
+          icon: '@mipmap/ic_launcher',
+          color: const Color(0xFFFF3B30),
+
+          // Sound & Vibration
+          playSound: true,
+          enableVibration: true,
+          vibrationPattern: vibrationPattern,
+          // Use default notification sound instead of custom
+
+          // Persistent notification
+          ongoing: true, // Can't be swiped away
+          autoCancel: false, // Doesn't dismiss on tap
+
+          // Full screen intent for maximum visibility
+          fullScreenIntent: true,
+
+          // LED light
+          enableLights: true,
+          ledColor: const Color(0xFFFF3B30),
+          ledOnMs: 1000,
+          ledOffMs: 500,
+
+          // Action buttons
+          actions: [
+            const AndroidNotificationAction(
+              'view_sos',
+              'View Location',
+              showsUserInterface: true,
+            ),
+            const AndroidNotificationAction(
+              'stop_alert',
+              'Stop Alert',
+              cancelNotification: true,
+            ),
+          ],
+
+          // Category for emergency
+          category: AndroidNotificationCategory.alarm,
         ),
-        payload: message.data.toString(),
-      );
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          interruptionLevel: InterruptionLevel.critical,
+        ),
+      ),
+      payload: data['sosId'] ?? '',
+    );
+
+    // Schedule repeated vibration every 30 seconds
+    _scheduleRepeatingSOSVibration(sosNotificationId, notification, data);
+  }
+
+  /// Schedule repeating SOS vibration every 30 seconds
+  Timer? _sosVibrationTimer;
+  bool _isSOSAlertStopped = false;
+
+  void _scheduleRepeatingSOSVibration(
+    int notificationId,
+    RemoteNotification notification,
+    Map<String, dynamic> data,
+  ) async {
+    // Cancel previous timer if exists
+    _sosVibrationTimer?.cancel();
+    _isSOSAlertStopped = false;
+
+    if (kDebugMode) {
+      print('⏰ Starting SOS alert timer');
+    }
+
+    // Repeat every 30 seconds
+    _sosVibrationTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+      // Check if SOS alert was stopped
+      if (_isSOSAlertStopped) {
+        timer.cancel();
+        if (kDebugMode) {
+          print('⏹️ SOS alert timer stopped (flag check)');
+        }
+        return;
+      }
+
+      // Check if notification is still active
+      final activeNotifications = await _localNotifications.getActiveNotifications();
+      final isStillActive = activeNotifications.any((n) => n.id == notificationId);
+
+      if (isStillActive && !_isSOSAlertStopped) {
+        // Re-show notification to trigger vibration again
+        await _showPersistentSOSNotification(notification, data);
+
+        if (kDebugMode) {
+          print('🔔 SOS alert repeated at ${DateTime.now()}');
+        }
+      } else {
+        // Notification was dismissed, stop timer
+        timer.cancel();
+        _isSOSAlertStopped = true;
+        if (kDebugMode) {
+          print('⏹️ SOS alert stopped (notification dismissed)');
+        }
+      }
+    });
+  }
+
+  /// Stop SOS alert manually
+  Future<void> stopSOSAlert() async {
+    _isSOSAlertStopped = true;
+    _sosVibrationTimer?.cancel();
+    _sosVibrationTimer = null;
+    await _localNotifications.cancel(99999); // Cancel SOS notification
+
+    if (kDebugMode) {
+      print('⏹️ SOS alert manually stopped');
     }
   }
 
@@ -293,13 +479,23 @@ class NotificationService {
         return;
       }
 
+      // Get user email for logging
+      final userEmail = _auth.currentUser?.email ?? 'unknown';
+
+      if (kDebugMode) {
+        print('📝 Saving FCM Token:');
+        print('   User ID: $uid');
+        print('   Email: $userEmail');
+        print('   Token: ${token.substring(0, 30)}...');
+      }
+
       await _firestore.collection('users').doc(uid).set({
         'fcmToken': token,
         'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
       if (kDebugMode) {
-        print('✅ FCM Token saved for user: $uid');
+        print('✅ FCM Token saved successfully to Firestore');
       }
     } catch (e) {
       if (kDebugMode) {
