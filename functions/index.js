@@ -34,13 +34,20 @@ exports.onSOSCreate = functions.firestore
     console.log('SOS Data:', sosData);
 
     try {
-      // Get emergency contact user IDs
-      const emergencyContactIds = sosData.emergencyContactIds || [];
+      // Get emergency contact user IDs (exclude sender)
+      let emergencyContactIds = sosData.emergencyContactIds || [];
+
+      // Remove sender from recipients (don't send SOS notification to yourself)
+      emergencyContactIds = emergencyContactIds.filter(id => id !== sosData.senderId);
 
       if (emergencyContactIds.length === 0) {
-        console.log('⚠️ No emergency contacts found');
+        console.log('⚠️ No emergency contacts found (after excluding sender)');
         return null;
       }
+
+      console.log(`📤 Sending to ${emergencyContactIds.length} emergency contacts (excluding sender)`);
+      console.log('📋 Emergency Contact IDs:', emergencyContactIds);
+      console.log('🚫 Sender ID (excluded):', sosData.senderId);
 
       // Get FCM tokens for all emergency contacts
       const tokens = await getEmergencyContactTokens(emergencyContactIds);
@@ -50,10 +57,15 @@ exports.onSOSCreate = functions.firestore
         return null;
       }
 
+      console.log(`🔑 Found ${tokens.length} FCM tokens`);
+      tokens.forEach((token, idx) => {
+        console.log(`  Token ${idx + 1}: ${token.substring(0, 30)}...`);
+      });
+
       // Prepare notification payload
       const notification = {
-        title: `🚨 SOS dari ${sosData.senderName}`,
-        body: `${sosData.senderName} mengirim SOS darurat! Tap untuk melihat lokasi.`,
+        title: `🚨 EMERGENCY SOS`,
+        body: `${sosData.senderName} sent an emergency SOS! Tap to view location.`,
       };
 
       const data = {
@@ -65,7 +77,7 @@ exports.onSOSCreate = functions.firestore
         message: sosData.message,
         latitude: String(sosData.location.latitude),
         longitude: String(sosData.location.longitude),
-        type: 'sos_alert',
+        type: 'sos', // Changed from 'sos_alert' to match notification_service.dart detection
       };
 
       // Send notification to all emergency contacts
@@ -135,18 +147,26 @@ exports.onSOSUpdate = functions.firestore
     const beforeData = change.before.data();
     const afterData = change.after.data();
 
-    // Check if SOS was cancelled
-    if (beforeData.status === 'active' && afterData.status === 'cancelled') {
+    // Check if SOS was cancelled or resolved
+    const wasCancelled = beforeData.status === 'active' && afterData.status === 'cancelled';
+    const wasResolved = beforeData.status === 'active' && afterData.status === 'resolved';
+
+    if (wasCancelled) {
       console.log('✅ SOS cancelled:', sosId);
 
       try {
-        // Get emergency contact user IDs
-        const emergencyContactIds = afterData.emergencyContactIds || [];
+        // Get emergency contact user IDs (exclude sender)
+        let emergencyContactIds = afterData.emergencyContactIds || [];
+
+        // Remove sender from recipients
+        emergencyContactIds = emergencyContactIds.filter(id => id !== afterData.senderId);
 
         if (emergencyContactIds.length === 0) {
-          console.log('⚠️ No emergency contacts found');
+          console.log('⚠️ No emergency contacts found (after excluding sender)');
           return null;
         }
+
+        console.log(`📤 Sending cancellation to ${emergencyContactIds.length} emergency contacts (excluding sender)`);
 
         // Get FCM tokens
         const tokens = await getEmergencyContactTokens(emergencyContactIds);
@@ -158,8 +178,8 @@ exports.onSOSUpdate = functions.firestore
 
         // Send cancellation notification
         const notification = {
-          title: `✅ SOS Dibatalkan - ${afterData.senderName}`,
-          body: `${afterData.senderName} telah membatalkan SOS darurat.`,
+          title: `✅ SOS Cancelled - ${afterData.senderName}`,
+          body: `${afterData.senderName} has cancelled the emergency SOS.`,
         };
 
         const data = {
@@ -191,7 +211,66 @@ exports.onSOSUpdate = functions.firestore
 
         return null;
       } catch (error) {
-        console.error('❌ Error in onSOSUpdate:', error);
+        console.error('❌ Error in onSOSUpdate (cancel):', error);
+        return null;
+      }
+    }
+
+    if (wasResolved) {
+      console.log('✅ SOS resolved:', sosId);
+      console.log('📋 Full SOS Data:', afterData);
+
+      try {
+        // Send "SOS Resolved" notification to SENDER ONLY
+        const senderIds = [afterData.senderId];
+
+        console.log('📤 Sending resolution notification to sender:', afterData.senderId);
+        console.log('📧 Sender email/name:', afterData.senderName);
+
+        // Get FCM token for sender
+        const tokens = await getEmergencyContactTokens(senderIds);
+
+        if (tokens.length === 0) {
+          console.log('⚠️ No FCM tokens found');
+          return null;
+        }
+
+        // Send resolved notification
+        const notification = {
+          title: `✅ SOS Resolved - ${afterData.senderName}`,
+          body: `${afterData.senderName}'s emergency has been resolved.`,
+        };
+
+        const data = {
+          sosId: sosId,
+          senderId: afterData.senderId,
+          senderName: afterData.senderName,
+          type: 'sos_resolved',
+        };
+
+        const message = {
+          notification: notification,
+          data: data,
+          tokens: tokens,
+          android: {
+            priority: 'high',
+            notification: {
+              channelId: 'high_importance_channel',
+              tag: sosId, // Same tag to replace the SOS notification
+            },
+          },
+        };
+
+        const response = await messaging.sendEachForMulticast(message);
+
+        console.log(`✅ Successfully sent ${response.successCount} resolved notifications`);
+        if (response.failureCount > 0) {
+          console.log(`❌ Failed to send ${response.failureCount} notifications`);
+        }
+
+        return null;
+      } catch (error) {
+        console.error('❌ Error in onSOSUpdate (resolve):', error);
         return null;
       }
     }
@@ -221,9 +300,10 @@ async function getEmergencyContactTokens(userIds) {
         const userData = doc.data();
         if (userData.fcmToken) {
           tokens.push(userData.fcmToken);
-          console.log(`✅ Found token for user: ${doc.id}`);
+          console.log(`✅ Found token for user: ${doc.id} (${userData.email || 'no email'})`);
+          console.log(`   Token: ${userData.fcmToken.substring(0, 30)}...`);
         } else {
-          console.log(`⚠️ No FCM token for user: ${doc.id}`);
+          console.log(`⚠️ No FCM token for user: ${doc.id} (${userData.email || 'no email'})`);
         }
       } else {
         console.log(`⚠️ User not found: ${doc.id}`);

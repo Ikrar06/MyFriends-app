@@ -72,12 +72,19 @@ service cloud.firestore {
         request.auth.uid in resource.data.emergencyContactIds
       );
 
-      // Allow update hanya untuk cancel (ubah status menjadi 'cancelled')
-      // Hanya pengirim yang bisa cancel
-      allow update: if isSignedIn() &&
-        resource.data.senderId == request.auth.uid &&
-        request.resource.data.status == 'cancelled' &&
-        resource.data.status == 'active';
+      // Allow update untuk:
+      // 1. Cancel (pengirim) - ubah status menjadi 'cancelled'
+      // 2. Resolve (emergency contact) - ubah status menjadi 'resolved'
+      allow update: if isSignedIn() && (
+        // Sender can cancel
+        (resource.data.senderId == request.auth.uid &&
+         request.resource.data.status == 'cancelled' &&
+         resource.data.status == 'active') ||
+        // Emergency contact can resolve
+        (request.auth.uid in resource.data.emergencyContactIds &&
+         request.resource.data.status == 'resolved' &&
+         resource.data.status == 'active')
+      );
 
       // Tidak allow delete untuk audit trail
       allow delete: if false;

@@ -151,6 +151,13 @@ class SOSProvider with ChangeNotifier {
         createdAt: DateTime.now(),
       );
 
+      if (kDebugMode) {
+        print('📤 Creating SOS message:');
+        print('   Sender ID: $_currentUserId');
+        print('   Sender Name: $senderName');
+        print('   Emergency Contact IDs: $emergencyContactIds');
+      }
+
       // 3. Save to Firestore
       DocumentReference docRef = await _firestore
           .collection('sos_messages')
@@ -207,6 +214,36 @@ class SOSProvider with ChangeNotifier {
     }
   }
 
+  /// Resolve SOS (for receivers/emergency contacts)
+  Future<void> resolveSOS(String sosId) async {
+    try {
+      // Update status to 'resolved'
+      await _firestore
+          .collection('sos_messages')
+          .doc(sosId)
+          .update({
+        'status': 'resolved',
+        'resolvedAt': FieldValue.serverTimestamp(),
+        'resolvedBy': _currentUserId,
+      });
+
+      // Cancel notification for this receiver
+      await _notificationService.stopSOSAlert();
+
+      if (kDebugMode) {
+        print('✅ SOS resolved: $sosId');
+      }
+
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Failed to resolve SOS: $e';
+      if (kDebugMode) {
+        print('❌ Error resolving SOS: $e');
+      }
+      rethrow;
+    }
+  }
+
   /// Dismiss received SOS notification (cancel notification only)
   Future<void> dismissReceivedSOS(String sosId) async {
     try {
@@ -232,24 +269,45 @@ class SOSProvider with ChangeNotifier {
     List<String> userIds = [];
 
     try {
-      // Query Firestore users collection to find users with matching phone numbers
+      // Query Firestore users collection to find users with matching email
       for (var contact in emergencyContacts) {
-        final phoneNumber = contact.nomor;
+        final email = contact.email;
 
-        // Query users by phone number
+        if (email.isEmpty) {
+          if (kDebugMode) {
+            print('⚠️ Contact ${contact.nama} has no email');
+          }
+          continue;
+        }
+
+        // Query users by email (match with Firebase Auth email)
         final querySnapshot = await _firestore
             .collection('users')
-            .where('phoneNumber', isEqualTo: phoneNumber)
+            .where('email', isEqualTo: email)
             .limit(1)
             .get();
 
         if (querySnapshot.docs.isNotEmpty) {
-          userIds.add(querySnapshot.docs.first.id);
+          final userId = querySnapshot.docs.first.id;
+          userIds.add(userId);
+          if (kDebugMode) {
+            print('✅ Found user ID for ${contact.nama}: $userId');
+          }
+        } else {
+          if (kDebugMode) {
+            print('⚠️ No user found with email: $email');
+          }
         }
+      }
+
+      // Remove current user from the list (don't send SOS to yourself)
+      if (_currentUserId != null) {
+        userIds.remove(_currentUserId);
       }
 
       if (kDebugMode) {
         print('👥 Found ${userIds.length} registered emergency contacts');
+        print('📋 User IDs: $userIds');
       }
 
       return userIds;

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:myfriends_app/models/sos_model.dart';
 import 'package:myfriends_app/providers/sos_provider.dart';
 import 'package:myfriends_app/providers/auth_provider.dart';
+import 'package:myfriends_app/services/notification_service.dart';
 import 'package:intl/intl.dart';
 
 /// SOS Detail Screen
@@ -25,8 +26,14 @@ class SOSDetailScreen extends StatelessWidget {
     final url = Uri.parse(sosMessage.googleMapsUrl);
 
     try {
+      // Try externalApplication mode first
       if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
+        try {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          // Fallback to platformDefault if externalApplication fails
+          await launchUrl(url, mode: LaunchMode.platformDefault);
+        }
       } else {
         if (!context.mounted) return;
 
@@ -119,6 +126,105 @@ class SOSDetailScreen extends StatelessWidget {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _resolveSOS(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Mark as Resolved',
+          style: TextStyle(fontFamily: 'Poppins'),
+        ),
+        content: const Text(
+          'Are you sure the emergency has been resolved? This will stop all alerts.',
+          style: TextStyle(fontFamily: 'Poppins'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'No',
+              style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Yes, Resolve',
+              style: TextStyle(fontFamily: 'Poppins', color: Colors.green),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      if (!context.mounted) return;
+
+      try {
+        final sosProvider = Provider.of<SOSProvider>(context, listen: false);
+        await sosProvider.resolveSOS(sosMessage.id!);
+
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'SOS marked as resolved',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context);
+      } catch (e) {
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to resolve SOS: $e',
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _muteAlerts(BuildContext context) async {
+    try {
+      final notificationService = NotificationService();
+      await notificationService.stopSOSAlert();
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Alerts muted. You can still see SOS details here.',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to mute alerts: $e',
+            style: const TextStyle(fontFamily: 'Poppins'),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -364,31 +470,89 @@ class SOSDetailScreen extends StatelessWidget {
 
                     const SizedBox(height: 24),
 
-                    // Cancel Button (only for sender and if SOS is active)
-                    if (isSender && sosMessage.isActive)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _cancelSOS(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                    // Action Buttons
+                    if (sosMessage.isActive) ...[
+                      // Cancel Button (only for sender)
+                      if (isSender)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _cancelSOS(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                             ),
-                          ),
-                          icon: const Icon(Icons.cancel_outlined, size: 22),
-                          label: const Text(
-                            'Cancel SOS',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            icon: const Icon(Icons.cancel_outlined, size: 22),
+                            label: const Text(
+                              'Cancel SOS',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+
+                      // Buttons for receivers
+                      if (!isSender) ...[
+                        // Mute Alerts Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _muteAlerts(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange,
+                              side: const BorderSide(color: Colors.orange, width: 2),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            icon: const Icon(Icons.notifications_off, size: 22),
+                            label: const Text(
+                              'Mute Alerts',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Resolve Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _resolveSOS(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            icon: const Icon(Icons.check_circle_outline, size: 22),
+                            label: const Text(
+                              'Mark as Resolved',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
 
                     const SizedBox(height: 40),
                   ],
