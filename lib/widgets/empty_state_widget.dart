@@ -53,9 +53,11 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
             ),
             if (actionLabel != null && onActionTap != null) ...[
               const SizedBox(height: 32),

@@ -494,15 +494,14 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
                 final allContacts = contactProvider.contacts;
                 final existingIds = widget.group.contactIds;
 
-                // Filter out contacts already in group
-                final availableContacts = allContacts
-                    .where((contact) => !existingIds.contains(contact.id))
+                // Show all contacts, but mark which ones are already in group
+                final filteredContacts = allContacts
                     .where((contact) =>
                         _searchQuery.isEmpty ||
                         contact.nama.toLowerCase().contains(_searchQuery))
                     .toList();
 
-                if (availableContacts.isEmpty) {
+                if (filteredContacts.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -513,11 +512,9 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
                           color: Colors.grey[300],
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isEmpty
-                              ? 'All contacts are already in the group'
-                              : 'Contact not found',
-                          style: const TextStyle(
+                        const Text(
+                          'No contacts found',
+                          style: TextStyle(
                             fontFamily: 'Poppins',
                             color: Colors.grey,
                           ),
@@ -528,9 +525,11 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
                 }
 
                 return ListView.builder(
-                  itemCount: availableContacts.length,
+                  itemCount: filteredContacts.length,
                   itemBuilder: (context, index) {
-                    final contact = availableContacts[index];
+                    final contact = filteredContacts[index];
+                    final isAlreadyInGroup = existingIds.contains(contact.id);
+
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
@@ -545,19 +544,33 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
                       ),
                       title: Text(
                         contact.nama,
-                        style: const TextStyle(fontFamily: 'Poppins'),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: isAlreadyInGroup ? Colors.grey[400] : Colors.black,
+                        ),
                       ),
                       subtitle: Text(
                         contact.nomor,
-                        style: const TextStyle(fontFamily: 'Poppins'),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.add_circle,
-                          color: Color(0xFFFE7743),
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: isAlreadyInGroup ? Colors.grey[300] : Colors.grey[600],
                         ),
-                        onPressed: () => _addContact(contact),
                       ),
+                      trailing: isAlreadyInGroup
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                            )
+                          : IconButton(
+                              icon: const Icon(
+                                Icons.add_circle,
+                                color: Color(0xFFFE7743),
+                              ),
+                              onPressed: () => _addContact(contact),
+                            ),
+                      onTap: isAlreadyInGroup
+                          ? null
+                          : () => _addContact(contact),
                     );
                   },
                 );

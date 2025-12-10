@@ -76,10 +76,16 @@ class CustomButton extends StatelessWidget {
                     children: [
                       Icon(icon),
                       const SizedBox(width: 8),
-                      Text(text),
+                      Text(
+                        text,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                      ),
                     ],
                   )
-                : Text(text),
+                : Text(
+                    text,
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                  ),
       ),
     );
   }
@@ -136,10 +142,16 @@ class CustomOutlineButton extends StatelessWidget {
                     children: [
                       Icon(icon),
                       const SizedBox(width: 8),
-                      Text(text),
+                      Text(
+                        text,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                      ),
                     ],
                   )
-                : Text(text),
+                : Text(
+                    text,
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                  ),
       ),
     );
   }
