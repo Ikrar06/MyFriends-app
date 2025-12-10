@@ -71,16 +71,23 @@ This is a Flutter-based mobile application created as the final project for Mobi
 
 ```
 lib/
-├── models/           # Data models (Contact, Group, User)
-├── providers/        # State management providers
-├── screens/          # App screens
+├── core/            # Core functionality
+│   ├── constants/   # App constants and configurations
+│   ├── theme/       # App theme and styling
+│   └── utils/       # Utility functions and helpers
+├── models/          # Data models (Contact, Group, User)
+├── providers/       # State management providers
+├── screens/         # App screens
 │   ├── auth/        # Login and registration
 │   ├── contact/     # Contact management screens
 │   ├── group/       # Group management screens
 │   ├── home/        # Home screen
-│   └── onboarding/  # First-time user experience
+│   ├── main/        # Main navigation screen
+│   ├── onboarding/  # First-time user experience
+│   ├── sos/         # Emergency SOS feature
+│   └── splash/      # Splash screen
 ├── services/        # Firebase and other services
-├── routes/          # App navigation
+├── routes/          # App navigation routing
 └── widgets/         # Reusable UI components
 ```
 
@@ -211,11 +218,34 @@ flutter build apk --release
 flutter build ios --release
 ```
 
+## iOS Compatibility
+
+This app is fully compatible with iOS devices. The following iOS-specific configurations are already set up:
+
+- Photo Library access for profile pictures
+- Camera access for taking photos
+- Contacts access (optional)
+- Location services for SOS feature
+- Firebase Cloud Messaging for notifications
+
+To run on iOS:
+```bash
+flutter run -d ios
+```
+
+Or to build:
+```bash
+flutter build ios
+```
+
+Note: You need a macOS with Xcode installed to build and run on iOS.
+
 ## Known Issues
 
 - SOS notifications require all users to have the app installed
 - Profile photos require internet connection to display
 - Some features may not work offline
+- iOS build requires macOS with Xcode installed
 
 ## Future Improvements
 
