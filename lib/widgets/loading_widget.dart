@@ -40,9 +40,11 @@ class LoadingWidget extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               message!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
               textAlign: TextAlign.center,
             ),
           ],

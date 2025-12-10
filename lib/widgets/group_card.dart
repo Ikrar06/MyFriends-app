@@ -53,15 +53,15 @@ class GroupCard extends StatelessWidget {
       margin: const EdgeInsets.all(8),
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             border: Border(
               left: BorderSide(
                 color: groupColor,
@@ -88,6 +88,7 @@ class GroupCard extends StatelessWidget {
                     child: Text(
                       nama,
                       style: const TextStyle(
+                        fontFamily: 'Poppins',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -109,6 +110,7 @@ class GroupCard extends StatelessWidget {
                   Text(
                     '$contactCount contact${contactCount == 1 ? '' : 's'}',
                     style: TextStyle(
+                      fontFamily: 'Poppins',
                       fontSize: 14,
                       color: Colors.grey[600],
                     ),
@@ -183,6 +185,7 @@ class CompactGroupCard extends StatelessWidget {
             Text(
               nama,
               style: TextStyle(
+                fontFamily: 'Poppins',
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -229,7 +232,7 @@ class GroupChip extends StatelessWidget {
     return Chip(
       label: Text(
         nama,
-        style: const TextStyle(fontSize: 12),
+        style: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
       ),
       backgroundColor: groupColor.withValues(alpha: 0.2),
       side: BorderSide(color: groupColor),

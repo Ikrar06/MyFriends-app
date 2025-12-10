@@ -85,8 +85,10 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       controller: _controller,
       autofocus: widget.autofocus,
       textInputAction: widget.textInputAction ?? TextInputAction.search,
+      style: const TextStyle(fontFamily: 'Poppins'),
       decoration: InputDecoration(
         hintText: widget.hintText,
+        hintStyle: const TextStyle(fontFamily: 'Poppins'),
         prefixIcon: const Icon(Icons.search),
         suffixIcon: _showClearButton
             ? IconButton(
@@ -151,10 +153,10 @@ class CompactSearchBar extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(fontFamily: 'Poppins', color: Colors.white),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          hintStyle: TextStyle(fontFamily: 'Poppins', color: Colors.white.withValues(alpha: 0.7)),
           prefixIcon: const Icon(Icons.search, color: Colors.white, size: 20),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(

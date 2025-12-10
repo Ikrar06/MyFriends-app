@@ -54,7 +54,7 @@ class ContactCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 1,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
@@ -65,6 +65,7 @@ class ContactCard extends StatelessWidget {
         title: Text(
           nama,
           style: const TextStyle(
+            fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -74,6 +75,7 @@ class ContactCard extends StatelessWidget {
         subtitle: Text(
           nomor,
           style: TextStyle(
+            fontFamily: 'Poppins',
             color: Colors.grey[600],
             fontSize: 14,
           ),
@@ -191,12 +193,13 @@ class CompactContactCard extends StatelessWidget {
       ),
       title: Text(
         nama,
+        style: const TextStyle(fontFamily: 'Poppins'),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
         nomor,
-        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey[600]),
       ),
       trailing: trailing,
       onTap: onTap,
