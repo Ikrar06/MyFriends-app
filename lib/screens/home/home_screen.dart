@@ -168,7 +168,7 @@ class _HomeTab extends StatelessWidget {
                     'Hi, $displayName!',
                     style: const TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 48,
+                      fontSize: 36,
                       fontWeight: FontWeight.w400,
                       color: Colors.black,
                       height: 1.0,
