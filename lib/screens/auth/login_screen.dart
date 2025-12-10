@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: const Color(0xFFF5F5F5),
           body: SafeArea(
             child: SingleChildScrollView(
               child: Padding(

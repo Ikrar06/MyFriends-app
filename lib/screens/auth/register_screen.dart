@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: const Color(0xFFF5F5F5),
           appBar: AppBar(
             elevation: 0,
             backgroundColor: Colors.white,
