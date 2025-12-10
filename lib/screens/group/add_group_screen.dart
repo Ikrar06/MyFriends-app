@@ -80,23 +80,39 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFE7743),
-        title: const Text(
-          'Create New Group',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Column(
           children: [
+            // Header with back button and title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Create New Group',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Form content
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  children: [
             // Group Icon Placeholder
             Center(
               child: Container(
@@ -208,6 +224,10 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                       ),
               ),
             ),
+          ],
+        ),
+      ),
+    ),
           ],
         ),
       ),
