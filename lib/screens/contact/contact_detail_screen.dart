@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/contact_model.dart';
 import '../../providers/contact_provider.dart';
+import '../../providers/group_provider.dart';
+import '../../widgets/group_tag.dart';
 import '../../routes/app_routes.dart';
 
 /// Contact Detail Screen
@@ -40,7 +42,10 @@ class ContactDetailScreen extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied to clipboard', style: const TextStyle(fontFamily: 'Poppins')),
+        content: Text(
+          '$label copied to clipboard',
+          style: const TextStyle(fontFamily: 'Poppins'),
+        ),
         backgroundColor: const Color(0xFFFE7743),
         duration: const Duration(seconds: 2),
       ),
@@ -48,7 +53,10 @@ class ContactDetailScreen extends StatelessWidget {
   }
 
   void _toggleEmergency(BuildContext context) {
-    final contactProvider = Provider.of<ContactProvider>(context, listen: false);
+    final contactProvider = Provider.of<ContactProvider>(
+      context,
+      listen: false,
+    );
     contactProvider.toggleEmergency(contact.id!, !contact.isEmergency);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -57,7 +65,9 @@ class ContactDetailScreen extends StatelessWidget {
           contact.isEmergency ? 'Removed from emergency' : 'Added to emergency',
           style: const TextStyle(fontFamily: 'Poppins'),
         ),
-        backgroundColor: contact.isEmergency ? Colors.grey[700] : const Color(0xFFFFC107),
+        backgroundColor: contact.isEmergency
+            ? Colors.grey[700]
+            : const Color(0xFFFFC107),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -68,18 +78,29 @@ class ContactDetailScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Contact', style: TextStyle(fontFamily: 'Poppins')),
-        content: Text('Are you sure you want to delete ${contact.nama}?',
-            style: const TextStyle(fontFamily: 'Poppins')),
+        title: const Text(
+          'Delete Contact',
+          style: TextStyle(fontFamily: 'Poppins'),
+        ),
+        content: Text(
+          'Are you sure you want to delete ${contact.nama}?',
+          style: const TextStyle(fontFamily: 'Poppins'),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins')),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(fontFamily: 'Poppins')),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
           ),
         ],
       ),
@@ -92,7 +113,10 @@ class ContactDetailScreen extends StatelessWidget {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Contact deleted', style: TextStyle(fontFamily: 'Poppins')),
+            content: Text(
+              'Contact deleted',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -132,7 +156,9 @@ class ContactDetailScreen extends StatelessWidget {
                         children: [
                           IconButton(
                             icon: Icon(
-                              contact.isEmergency ? Icons.star : Icons.star_border,
+                              contact.isEmergency
+                                  ? Icons.star
+                                  : Icons.star_border,
                               color: Colors.white,
                             ),
                             onPressed: () => _toggleEmergency(context),
@@ -162,16 +188,23 @@ class ContactDetailScreen extends StatelessWidget {
                       border: Border.all(color: Colors.white, width: 4),
                     ),
                     child: ClipOval(
-                      child: contact.photoUrl != null && contact.photoUrl!.isNotEmpty
+                      child:
+                          contact.photoUrl != null &&
+                              contact.photoUrl!.isNotEmpty
                           ? CachedNetworkImage(
                               imageUrl: contact.photoUrl!,
                               fit: BoxFit.cover,
                               placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
                               ),
                               errorWidget: (context, url, error) => Center(
                                 child: Text(
-                                  contact.nama.isNotEmpty ? contact.nama[0].toUpperCase() : '?',
+                                  contact.nama.isNotEmpty
+                                      ? contact.nama[0].toUpperCase()
+                                      : '?',
                                   style: const TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: 48,
@@ -183,7 +216,9 @@ class ContactDetailScreen extends StatelessWidget {
                             )
                           : Center(
                               child: Text(
-                                contact.nama.isNotEmpty ? contact.nama[0].toUpperCase() : '?',
+                                contact.nama.isNotEmpty
+                                    ? contact.nama[0].toUpperCase()
+                                    : '?',
                                 style: const TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 48,
@@ -212,7 +247,10 @@ class ContactDetailScreen extends StatelessWidget {
                   if (contact.isEmergency) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFC107),
                         borderRadius: BorderRadius.circular(16),
@@ -233,6 +271,32 @@ class ContactDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                  ],
+
+                  // Groups display
+                  if (contact.groupIds.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Consumer<GroupProvider>(
+                      builder: (context, groupProvider, child) {
+                        final groups = groupProvider.getGroupsByIds(
+                          contact.groupIds,
+                        );
+                        if (groups.isEmpty) return const SizedBox.shrink();
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: groups
+                              .map(
+                                (group) => GroupTag(
+                                  label: group.nama,
+                                  colorHex: group.colorHex,
+                                ),
+                              )
+                              .toList(),
+                        );
+                      },
                     ),
                   ],
                 ],
@@ -270,7 +334,11 @@ class ContactDetailScreen extends StatelessWidget {
                           icon: Icons.content_copy,
                           label: 'Copy',
                           color: const Color(0xFF9E9E9E),
-                          onTap: () => _copyToClipboard(context, contact.nomor, 'Phone number'),
+                          onTap: () => _copyToClipboard(
+                            context,
+                            contact.nomor,
+                            'Phone number',
+                          ),
                         ),
                       ],
                     ),
@@ -295,7 +363,11 @@ class ContactDetailScreen extends StatelessWidget {
                             icon: Icons.content_copy,
                             label: 'Copy',
                             color: const Color(0xFF9E9E9E),
-                            onTap: () => _copyToClipboard(context, contact.email, 'Email'),
+                            onTap: () => _copyToClipboard(
+                              context,
+                              contact.email,
+                              'Email',
+                            ),
                           ),
                         ],
                       ),
@@ -394,9 +466,7 @@ class ContactDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: actions,
-          ),
+          Row(children: actions),
         ],
       ),
     );

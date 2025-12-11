@@ -9,7 +9,8 @@ plugins {
 android {
     namespace = "com.kebutsemalam.myfriends_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         // set ke 11 agar desugaring bisa berjalan (safe & kompatibel)

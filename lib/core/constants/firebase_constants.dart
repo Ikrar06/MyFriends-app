@@ -24,6 +24,7 @@ class FirebaseConstants {
   static const String userId = 'userId';
   static const String createdAt = 'createdAt';
   static const String updatedAt = 'updatedAt';
+  static const String groupIds = 'groupIds';
 
   // --- Group Model Fields ---
   // (Digunakan di group_model.dart)

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/contact_provider.dart';
+import '../../models/contact_model.dart';
 import '../../routes/app_routes.dart';
 
 /// Group List Screen
@@ -41,7 +43,9 @@ class GroupListScreen extends StatelessWidget {
                 builder: (context, groupProvider, child) {
                   if (groupProvider.isLoading && groupProvider.groups.isEmpty) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFFFE7743)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFE7743),
+                      ),
                     );
                   }
 
@@ -50,7 +54,11 @@ class GroupListScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.group_outlined, size: 80, color: Colors.grey[300]),
+                          Icon(
+                            Icons.group_outlined,
+                            size: 80,
+                            color: Colors.grey[300],
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'No groups yet',
@@ -75,103 +83,128 @@ class GroupListScreen extends StatelessWidget {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: groupProvider.groups.length,
-                    itemBuilder: (context, index) {
-                      final group = groupProvider.groups[index];
-                      final memberCount = group.contactIds.length;
+                  return Consumer<ContactProvider>(
+                    builder: (context, contactProvider, child) {
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: groupProvider.groups.length,
+                        itemBuilder: (context, index) {
+                          final group = groupProvider.groups[index];
+                          final memberCount = contactProvider.contacts
+                              .where((c) => c.groupIds.contains(group.id))
+                              .length;
 
-                      return GestureDetector(
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.groupDetail,
-                          arguments: group,
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white, width: 8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
+                          return GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.groupDetail,
+                              arguments: group,
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 8,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                // Group Icon
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFD9D9D9),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.group,
-                                      color: Colors.black54,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-
-                                // Group Info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        group.nama,
-                                        style: const TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.black,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    // Group Icon
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: Color(
+                                          int.parse(
+                                            group.colorHex.replaceAll(
+                                              '#',
+                                              '0xFF',
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '$memberCount contacts',
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.grey[700],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Menu dots
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: List.generate(
-                                    3,
-                                    (index) => Container(
-                                      width: 6,
-                                      height: 6,
-                                      margin: const EdgeInsets.only(bottom: 6),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFD9D9D9),
                                         shape: BoxShape.circle,
                                       ),
+                                      child: Center(
+                                        child: Text(
+                                          group.nama.isNotEmpty
+                                              ? group.nama[0].toUpperCase()
+                                              : '?',
+                                          style: const TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(width: 16),
+
+                                    // Group Info
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            group.nama,
+                                            style: const TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '$memberCount members',
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Menu dots
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: List.generate(
+                                        3,
+                                        (index) => Container(
+                                          width: 6,
+                                          height: 6,
+                                          margin: const EdgeInsets.only(
+                                            bottom: 6,
+                                          ),
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFD9D9D9),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       );
                     },
                   );

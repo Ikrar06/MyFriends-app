@@ -3,92 +3,68 @@ import 'package:flutter/foundation.dart';
 import '../models/group_model.dart';
 import '../models/contact_model.dart';
 import '../services/group_service.dart';
+import '../services/contact_service.dart';
 
-/// Group Provider
-///
-/// Manages group state with Provider pattern.
-/// Provides real-time updates from Firestore via streams.
-///
-/// Usage in main.dart:
-/// ```dart
-/// ChangeNotifierProxyProvider<AuthProvider, GroupProvider>(
-///   create: (_) => GroupProvider(),
-///   update: (_, auth, previous) {
-///     final provider = previous ?? GroupProvider();
-///     provider.updateUserId(auth.userId);
-///     return provider;
-///   },
-/// ),
-/// ```
-class GroupProvider extends ChangeNotifier {
+class GroupProvider with ChangeNotifier {
   final GroupService _groupService = GroupService();
 
-  // State
   List<Group> _groups = [];
-  List<Contact> _contactsInGroup = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-  String? _currentUserId;
-
-  // Stream subscriptions
-  StreamSubscription<List<Group>>? _groupsSubscription;
-
-  // Getters
   List<Group> get groups => _groups;
-  List<Contact> get contactsInGroup => _contactsInGroup;
+
+  bool _isLoading = false;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  int get groupCount => _groups.length;
 
-  /// Update user ID and refresh group streams
-  ///
-  /// Called automatically by ChangeNotifierProxyProvider when auth state changes.
-  void updateUserId(String? userId) {
-    if (_currentUserId == userId) return;
+  String? _error;
+  String? get error => _error;
 
-    _currentUserId = userId;
+  // Stream subscription
+  StreamSubscription<List<Group>>? _groupsStreamSubscription;
 
+  /// Set user ID and subscribe to groups stream
+  void setUserId(String? userId) {
+    _groupService.setUserId(userId);
     if (userId != null) {
-      _groupService.setUserId(userId);
-      listenToGroups();
+      _subscribeToGroups();
     } else {
-      // User logged out, clear data
       _groups = [];
-      _contactsInGroup = [];
-      _groupsSubscription?.cancel();
+      _groupsStreamSubscription?.cancel();
       notifyListeners();
     }
   }
 
-  /// Listen to all groups stream
-  void listenToGroups() {
-    _groupsSubscription?.cancel();
-    _setLoading(true);
-
-    _groupsSubscription = _groupService.getGroupsStream().listen(
-      (groups) {
-        _groups = groups;
-        _errorMessage = null;
-        _setLoading(false);
+  void _subscribeToGroups() {
+    _groupsStreamSubscription?.cancel();
+    _groupsStreamSubscription = _groupService.getGroupsStream().listen(
+      (groupsData) {
+        _groups = groupsData;
+        notifyListeners();
       },
-      onError: (error) {
-        _errorMessage = error.toString();
-        _setLoading(false);
+      onError: (e) {
+        if (kDebugMode) {
+          print("Error listening to groups: $e");
+        }
+        _error = e.toString();
+        notifyListeners();
       },
     );
   }
 
   /// Add new group
-  Future<String> addGroup(Group group) async {
+  Future<String?> addGroup(String name, String colorHex) async {
     _setLoading(true);
-    _errorMessage = null;
-
     try {
-      final id = await _groupService.addGroup(group);
-      // Stream will automatically update the list
+      Group newGroup = Group(
+        nama: name,
+        colorHex: colorHex,
+        userId: '', // Will be set in Service
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      final id = await _groupService.addGroup(newGroup);
+      _error = null;
       return id;
     } catch (e) {
-      _errorMessage = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
       _setLoading(false);
@@ -98,115 +74,132 @@ class GroupProvider extends ChangeNotifier {
   /// Update existing group
   Future<void> updateGroup(Group group) async {
     _setLoading(true);
-    _errorMessage = null;
-
     try {
       await _groupService.updateGroup(group);
-      // Stream will automatically update the list
+      _error = null;
     } catch (e) {
-      _errorMessage = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Delete group by ID
-  Future<void> deleteGroup(String id) async {
+  /// Delete group
+  Future<void> deleteGroup(String groupId) async {
     _setLoading(true);
-    _errorMessage = null;
-
     try {
-      await _groupService.deleteGroup(id);
-      // Stream will automatically update the list
+      await _groupService.deleteGroup(groupId);
+      _error = null;
     } catch (e) {
-      _errorMessage = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Load contacts in a specific group
-  ///
-  /// This is not a stream, but a one-time fetch.
-  /// Use this when viewing group details.
-  Future<void> loadContactsInGroup(String groupId) async {
-    _setLoading(true);
-    _errorMessage = null;
+  /// Get specific group by ID (from local list)
+  List<Contact> _contactsInGroup = [];
+  List<Contact> get contactsInGroup => _contactsInGroup;
+  StreamSubscription<List<Contact>>? _contactsStreamSubscription;
+  final ContactService _contactService = ContactService();
 
-    try {
-      final stream = _groupService.getContactsInGroupStream(groupId);
-      final contacts = await stream.first;
-      _contactsInGroup = contacts;
-      _setLoading(false);
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = e.toString();
-      _setLoading(false);
-      notifyListeners();
-      rethrow;
-    }
+  // Alias for legacy support
+  void updateUserId(String? userId) => setUserId(userId);
+
+  // ... existing setUserId and _subscribeToGroups ...
+
+  /// Load contacts for a specific group (Real-time)
+  void loadContactsInGroup(String groupId) {
+    _contactsStreamSubscription?.cancel();
+    _setLoading(true);
+    _contactsStreamSubscription = _groupService
+        .getContactsInGroupStream(groupId)
+        .listen(
+          (contacts) {
+            _contactsInGroup = contacts;
+            _isLoading = false;
+            notifyListeners();
+          },
+          onError: (e) {
+            _error = e.toString();
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
-  /// Add contact to group
+  /// Add contact to group (Update Contact's groupIds)
   Future<void> addContactToGroup(String groupId, String contactId) async {
-    _errorMessage = null;
-
     try {
-      await _groupService.addContactToGroup(groupId, contactId);
-      // Reload contacts in group
-      await loadContactsInGroup(groupId);
+      // 1. Get the contact (we need current groupIds)
+      // Since we don't have a direct "getContact" in ContactService exposed here easily without a stream,
+      // we might need to fetch it.
+      // Ideally, the UI passes the Contact object. But the method signature is (groupId, contactId).
+      // Let's assume (for this fix) we can fetch it or we change the signature.
+      // But to match legacy call `addContactToGroup(groupId, contactId)`, we stick to IDs.
+      // We will need a way to fetch a single contact in ContactService or use Firestore directly.
+      // For now, let's use a quick fetch via Firestore in GroupService or ContactService if available.
+      // Wait, ContactService doesn't have getContactById.
+      // Let's rely on the fact that if we are adding, we probably have the Contact object in the UI.
+      // But the interface is IDs.
+      // Simple fix: fetch doc directly here or add getContact to ContactService.
+      // Let's just do a direct update on the contact document to add to array.
+
+      await _contactService.addContactToGroup(contactId, groupId);
     } catch (e) {
-      _errorMessage = e.toString();
       rethrow;
     }
   }
 
   /// Remove contact from group
   Future<void> removeContactFromGroup(String groupId, String contactId) async {
-    _errorMessage = null;
-
     try {
-      await _groupService.removeContactFromGroup(groupId, contactId);
-      // Reload contacts in group
-      await loadContactsInGroup(groupId);
+      await _contactService.removeContactFromGroup(contactId, groupId);
     } catch (e) {
-      _errorMessage = e.toString();
       rethrow;
     }
   }
 
-  /// Get groups that contain a specific contact
-  Future<List<Group>> getGroupsByContactId(String contactId) async {
+  // ... other methods ...
+
+  // ... existing Contact methods ...
+
+  /// Get specific group by ID (from local list)
+  Group? getGroupById(String? id) {
+    if (id == null) return null;
     try {
-      return await _groupService.getGroupsByContactId(contactId);
+      return _groups.firstWhere((g) => g.id == id);
     } catch (e) {
-      _errorMessage = e.toString();
-      return [];
+      return null;
     }
   }
 
-  /// Refresh groups manually
-  void refresh() {
-    listenToGroups();
+  /// Get list of groups from a list of IDs (helper for UI)
+  List<Group> getGroupsByIds(List<String> ids) {
+    return _groups.where((g) => g.id != null && ids.contains(g.id)).toList();
   }
 
-  /// Set loading state
+  /// Get groups for a specific contact (helper, though UI can just use getGroupsByIds(contact.groupIds))
+  List<Group> getGroupsForContactIds(List<String> groupIds) {
+    return getGroupsByIds(groupIds);
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
-  /// Clear error message
   void clearError() {
-    _errorMessage = null;
+    _error = null;
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _groupsSubscription?.cancel();
+    _groupsStreamSubscription?.cancel();
+    _contactsStreamSubscription?.cancel();
     super.dispose();
   }
 }
