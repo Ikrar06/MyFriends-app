@@ -26,6 +26,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
+  late TextEditingController _noteController;
   late bool _isEmergency;
   bool _isLoading = false;
   File? _selectedImage;
@@ -39,6 +40,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _nameController = TextEditingController(text: widget.contact.nama);
     _phoneController = TextEditingController(text: widget.contact.nomor);
     _emailController = TextEditingController(text: widget.contact.email);
+    _noteController = TextEditingController(text: widget.contact.note);
     _isEmergency = widget.contact.isEmergency;
     _currentPhotoUrl = widget.contact.photoUrl;
     _selectedGroupIds = List.from(widget.contact.groupIds);
@@ -49,6 +51,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -152,6 +155,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
         isEmergency: _isEmergency,
         photoUrl: photoUrl,
         groupIds: _selectedGroupIds,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
         updatedAt: DateTime.now(),
       );
 
@@ -470,6 +476,37 @@ class _EditContactScreenState extends State<EditContactScreen> {
                         return null;
                       },
                       keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 16),
+
+                    // Note Field
+                    TextFormField(
+                      controller: _noteController,
+                      decoration: InputDecoration(
+                        labelText: 'Private Note',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter note about this contact (private)',
+                        prefixIcon: const Icon(
+                          Icons.note_alt_outlined,
+                          color: Color(0xFFFE7743),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
+                          ),
+                        ),
+                        alignLabelWithHint: true,
+                      ),
+                      maxLength: 500,
+                      maxLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: 16),
 

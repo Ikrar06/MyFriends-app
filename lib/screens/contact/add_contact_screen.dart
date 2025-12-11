@@ -24,6 +24,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final _namaController = TextEditingController();
   final _nomorController = TextEditingController();
   final _emailController = TextEditingController();
+  final _noteController = TextEditingController();
   bool _isEmergency = false;
   bool _isLoading = false;
   File? _selectedImage;
@@ -34,6 +35,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     _namaController.dispose();
     _nomorController.dispose();
     _emailController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -137,6 +139,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
         isEmergency: _isEmergency,
         photoUrl: photoUrl,
         groupIds: _selectedGroupIds,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
         userId: '', // Will be set by service
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -367,6 +372,37 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         return null;
                       },
                       keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 16),
+
+                    // Note Field
+                    TextFormField(
+                      controller: _noteController,
+                      decoration: InputDecoration(
+                        labelText: 'Private Note',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter note about this contact (private)',
+                        prefixIcon: const Icon(
+                          Icons.note_alt_outlined,
+                          color: Color(0xFFFE7743),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
+                          ),
+                        ),
+                        alignLabelWithHint: true,
+                      ),
+                      maxLength: 500,
+                      maxLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: 16),
 
