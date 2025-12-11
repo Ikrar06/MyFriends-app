@@ -72,7 +72,7 @@ class LocationService {
       return position;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error getting location: $e');
+        print('Error getting location: $e');
       }
       rethrow;
     }
@@ -104,7 +104,7 @@ class LocationService {
       };
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error getting location with URL: $e');
+        print('Error getting location with URL: $e');
       }
       rethrow;
     }

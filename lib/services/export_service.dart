@@ -43,14 +43,14 @@ class ExportService {
       await file.writeAsString(csvString);
 
       if (kDebugMode) {
-        print('✅ CSV file created at: $filePath');
+        print('CSV file created at: $filePath');
       }
 
       // 6. Return file path
       return filePath;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error exporting to CSV: $e');
+        print('Error exporting to CSV: $e');
       }
       throw Exception('Failed to export data: $e');
     }
@@ -74,11 +74,11 @@ class ExportService {
       );
 
       if (kDebugMode) {
-        print('✅ Share result: ${result.status}');
+        print('Share result: ${result.status}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error sharing file: $e');
+        print('Error sharing file: $e');
       }
       throw Exception('Failed to share file: $e');
     }
