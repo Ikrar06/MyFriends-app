@@ -50,7 +50,7 @@ class GroupProvider with ChangeNotifier {
   }
 
   /// Add new group
-  Future<void> addGroup(String name, String colorHex) async {
+  Future<String?> addGroup(String name, String colorHex) async {
     _setLoading(true);
     try {
       Group newGroup = Group(
@@ -60,8 +60,9 @@ class GroupProvider with ChangeNotifier {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      await _groupService.addGroup(newGroup);
+      final id = await _groupService.addGroup(newGroup);
       _error = null;
+      return id;
     } catch (e) {
       _error = e.toString();
       rethrow;

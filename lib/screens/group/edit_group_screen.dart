@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/contact_provider.dart';
 import '../../models/group_model.dart';
+import '../../models/contact_model.dart';
 
 /// Edit Group Screen
 ///
@@ -19,12 +22,39 @@ class EditGroupScreen extends StatefulWidget {
 class _EditGroupScreenState extends State<EditGroupScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late Color _currentColor;
+  late String _colorHex;
   bool _isLoading = false;
+
+  List<String> _selectedContactIds = [];
+  List<String> _initialContactIds = [];
+  bool _isInit = true;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.group.nama);
+    _colorHex = widget.group.colorHex;
+    try {
+      _currentColor = Color(int.parse(_colorHex.replaceAll('#', '0xFF')));
+    } catch (e) {
+      _currentColor = const Color(0xFFFE7743);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      final contactProvider = Provider.of<ContactProvider>(context);
+      final groupContacts = contactProvider.contacts
+          .where((c) => c.groupIds.contains(widget.group.id))
+          .map((c) => c.id!)
+          .toList();
+      _selectedContactIds = List.from(groupContacts);
+      _initialContactIds = List.from(groupContacts);
+      _isInit = false;
+    }
   }
 
   @override
@@ -47,10 +77,31 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
       final updatedGroup = widget.group.copyWith(
         nama: _nameController.text.trim(),
+        colorHex: _colorHex,
         updatedAt: DateTime.now(),
       );
 
       await groupProvider.updateGroup(updatedGroup);
+
+      // Handle Contact Updates
+      // 1. Find contacts to add (present in selected but not in initial)
+      final toAdd = _selectedContactIds
+          .where((id) => !_initialContactIds.contains(id))
+          .toList();
+
+      // 2. Find contacts to remove (present in initial but not in selected)
+      final toRemove = _initialContactIds
+          .where((id) => !_selectedContactIds.contains(id))
+          .toList();
+
+      // Execute updates
+      for (final contactId in toAdd) {
+        await groupProvider.addContactToGroup(widget.group.id!, contactId);
+      }
+
+      for (final contactId in toRemove) {
+        await groupProvider.removeContactFromGroup(widget.group.id!, contactId);
+      }
 
       if (!mounted) return;
 
@@ -202,19 +253,55 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                     vertical: 8,
                   ),
                   children: [
-                    // Group Icon
+                    // Group Icon with Color Picker Trigger
                     Center(
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Show color picker dialog
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Select Group Color'),
+                              content: SingleChildScrollView(
+                                child: BlockPicker(
+                                  pickerColor: _currentColor,
+                                  onColorChanged: (color) {
+                                    setState(() {
+                                      _currentColor = color;
+                                      _colorHex =
+                                          '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+                                    });
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: _currentColor.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _currentColor, width: 2),
+                          ),
+                          child: Icon(
+                            Icons.group,
+                            size: 60,
+                            color: _currentColor,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.group,
-                          size: 60,
-                          color: Color(0xFFFE7743),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        'Tap icon to change color',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ),
@@ -252,6 +339,88 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                         return null;
                       },
                       textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 16),
+
+                    // Members Section
+                    const Text(
+                      'Manage Members',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Consumer<ContactProvider>(
+                      builder: (context, contactProvider, child) {
+                        final contacts = contactProvider.contacts;
+                        if (contacts.isEmpty) {
+                          return const Text(
+                            'No contacts available.',
+                            style: TextStyle(color: Colors.grey),
+                          );
+                        }
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: contacts.map((contact) {
+                            final isSelected = _selectedContactIds.contains(
+                              contact.id,
+                            );
+                            return FilterChip(
+                              label: Text(contact.nama),
+                              selected: isSelected,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    if (contact.id != null) {
+                                      _selectedContactIds.add(contact.id!);
+                                    }
+                                  } else {
+                                    _selectedContactIds.remove(contact.id);
+                                  }
+                                });
+                              },
+                              backgroundColor: Colors.white,
+                              selectedColor: Color(
+                                int.parse(_colorHex.replaceAll('#', '0xFF')),
+                              ).withOpacity(0.2),
+                              checkmarkColor: Color(
+                                int.parse(_colorHex.replaceAll('#', '0xFF')),
+                              ),
+                              labelStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                color: isSelected
+                                    ? Color(
+                                        int.parse(
+                                          _colorHex.replaceAll('#', '0xFF'),
+                                        ),
+                                      )
+                                    : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? Color(
+                                          int.parse(
+                                            _colorHex.replaceAll('#', '0xFF'),
+                                          ),
+                                        )
+                                      : Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
 

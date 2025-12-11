@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../providers/contact_provider.dart';
+import '../../providers/group_provider.dart';
 import '../../models/contact_model.dart';
+import '../group/group_management_page.dart';
 
 /// Add Contact Screen
 ///
@@ -25,6 +27,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   bool _isEmergency = false;
   bool _isLoading = false;
   File? _selectedImage;
+  final List<String> _selectedGroupIds = [];
 
   @override
   void dispose() {
@@ -48,13 +51,22 @@ class _AddContactScreenState extends State<AddContactScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFFFE7743)),
-                title: const Text('Gallery', style: TextStyle(fontFamily: 'Poppins')),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFFFE7743),
+                ),
+                title: const Text(
+                  'Gallery',
+                  style: TextStyle(fontFamily: 'Poppins'),
+                ),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: Color(0xFFFE7743)),
-                title: const Text('Camera', style: TextStyle(fontFamily: 'Poppins')),
+                title: const Text(
+                  'Camera',
+                  style: TextStyle(fontFamily: 'Poppins'),
+                ),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
             ],
@@ -100,7 +112,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
     });
 
     try {
-      final contactProvider = Provider.of<ContactProvider>(context, listen: false);
+      final contactProvider = Provider.of<ContactProvider>(
+        context,
+        listen: false,
+      );
 
       // Upload image to Firebase Storage if selected
       String? photoUrl;
@@ -121,6 +136,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
         email: _emailController.text.trim(),
         isEmergency: _isEmergency,
         photoUrl: photoUrl,
+        groupIds: _selectedGroupIds,
         userId: '', // Will be set by service
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -191,206 +207,332 @@ class _AddContactScreenState extends State<AddContactScreen> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  children: [
-            // Profile Picture Placeholder
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
-                    backgroundImage: _selectedImage != null
-                        ? FileImage(_selectedImage!)
-                        : null,
-                    child: _selectedImage == null
-                        ? const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Color(0xFFFE7743),
-                          )
-                        : null,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFE7743),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        onPressed: _pickImage,
+                  children: [
+                    // Profile Picture Placeholder
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 60,
+                            backgroundColor: const Color(
+                              0xFFFE7743,
+                            ).withValues(alpha: 0.2),
+                            backgroundImage: _selectedImage != null
+                                ? FileImage(_selectedImage!)
+                                : null,
+                            child: _selectedImage == null
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color: Color(0xFFFE7743),
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFE7743),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: _pickImage,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-            // Nama Field
-            TextFormField(
-              controller: _namaController,
-              decoration: InputDecoration(
-                labelText: 'Name *',
-                labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Enter full name',
-                prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFFE7743)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Name cannot be empty';
-                }
-                if (value.trim().length > 100) {
-                  return 'Name maximum 100 characters';
-                }
-                return null;
-              },
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-
-            // Nomor Field
-            TextFormField(
-              controller: _nomorController,
-              decoration: InputDecoration(
-                labelText: 'Phone Number *',
-                labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Enter phone number',
-                prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFFFE7743)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Phone number cannot be empty';
-                }
-                if (value.trim().length > 20) {
-                  return 'Phone number maximum 20 characters';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 16),
-
-            // Email Field
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email *',
-                labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Enter email',
-                prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFFE7743)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Email cannot be empty';
-                }
-                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                if (!emailRegex.hasMatch(value.trim())) {
-                  return 'Invalid email format';
-                }
-                if (value.trim().length > 100) {
-                  return 'Email maximum 100 characters';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-
-            // Favorite Toggle
-            Card(
-              elevation: 0,
-              color: Colors.grey[100],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: SwitchListTile(
-                title: const Text(
-                  'Mark as Emergency Contact',
-                  style: TextStyle(fontFamily: 'Poppins'),
-                ),
-                subtitle: const Text(
-                  'Emergency contacts will receive SOS messages',
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
-                ),
-                value: _isEmergency,
-                onChanged: (value) {
-                  setState(() {
-                    _isEmergency = value;
-                  });
-                },
-                activeTrackColor: const Color(0xFFFE7743).withValues(alpha: 0.5),
-                activeThumbColor: const Color(0xFFFE7743),
-                secondary: Icon(
-                  _isEmergency ? Icons.star : Icons.star_border,
-                  color: _isEmergency ? const Color(0xFFFE7743) : Colors.grey,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Save Button
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveContact,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFE7743),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+                    // Nama Field
+                    TextFormField(
+                      controller: _namaController,
+                      decoration: InputDecoration(
+                        labelText: 'Name *',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter full name',
+                        prefixIcon: const Icon(
+                          Icons.person_outline,
+                          color: Color(0xFFFE7743),
                         ),
-                      )
-                    : const Text(
-                        'Save Contact',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
+                          ),
                         ),
                       ),
-              ),
-            ),
-          ],
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Name cannot be empty';
+                        }
+                        if (value.trim().length > 100) {
+                          return 'Name maximum 100 characters';
+                        }
+                        return null;
+                      },
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Nomor Field
+                    TextFormField(
+                      controller: _nomorController,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number *',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter phone number',
+                        prefixIcon: const Icon(
+                          Icons.phone_outlined,
+                          color: Color(0xFFFE7743),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Phone number cannot be empty';
+                        }
+                        if (value.trim().length > 20) {
+                          return 'Phone number maximum 20 characters';
+                        }
+                        return null;
+                      },
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email Field
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email *',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter email',
+                        prefixIcon: const Icon(
+                          Icons.email_outlined,
+                          color: Color(0xFFFE7743),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Email cannot be empty';
+                        }
+                        final emailRegex = RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        );
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return 'Invalid email format';
+                        }
+                        if (value.trim().length > 100) {
+                          return 'Email maximum 100 characters';
+                        }
+                        return null;
+                      },
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Favorite Toggle
+                    Card(
+                      elevation: 0,
+                      color: Colors.grey[100],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SwitchListTile(
+                        title: const Text(
+                          'Mark as Emergency Contact',
+                          style: TextStyle(fontFamily: 'Poppins'),
+                        ),
+                        subtitle: const Text(
+                          'Emergency contacts will receive SOS messages',
+                          style: TextStyle(fontFamily: 'Poppins', fontSize: 12),
+                        ),
+                        value: _isEmergency,
+                        onChanged: (value) {
+                          setState(() {
+                            _isEmergency = value;
+                          });
+                        },
+                        activeTrackColor: const Color(
+                          0xFFFE7743,
+                        ).withValues(alpha: 0.5),
+                        activeThumbColor: const Color(0xFFFE7743),
+                        secondary: Icon(
+                          _isEmergency ? Icons.star : Icons.star_border,
+                          color: _isEmergency
+                              ? const Color(0xFFFE7743)
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // --- Groups Section ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Groups',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const GroupManagementPage(),
+                              ),
+                            );
+                          },
+                          child: const Text('Manage Groups'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Consumer<GroupProvider>(
+                      builder: (context, groupProvider, child) {
+                        final groups = groupProvider.groups;
+                        if (groups.isEmpty) {
+                          return const Text(
+                            'No groups available. Create one!',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          );
+                        }
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: groups.map((group) {
+                            final isSelected = _selectedGroupIds.contains(
+                              group.id,
+                            );
+                            return FilterChip(
+                              label: Text(group.nama),
+                              selected: isSelected,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    if (group.id != null)
+                                      _selectedGroupIds.add(group.id!);
+                                  } else {
+                                    _selectedGroupIds.remove(group.id);
+                                  }
+                                });
+                              },
+                              backgroundColor: Color(
+                                int.parse(
+                                  group.colorHex.replaceAll('#', '0xFF'),
+                                ),
+                              ).withOpacity(0.1),
+                              selectedColor: Color(
+                                int.parse(
+                                  group.colorHex.replaceAll('#', '0xFF'),
+                                ),
+                              ).withOpacity(0.3),
+                              checkmarkColor: Colors.black,
+                              labelStyle: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: Color(
+                                    int.parse(
+                                      group.colorHex.replaceAll('#', '0xFF'),
+                                    ),
+                                  ),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save Button
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveContact,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFE7743),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Save Contact',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
