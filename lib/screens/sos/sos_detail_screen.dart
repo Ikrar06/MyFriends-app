@@ -199,7 +199,7 @@ class SOSDetailScreen extends StatelessWidget {
   Future<void> _muteAlerts(BuildContext context) async {
     try {
       final notificationService = NotificationService();
-      await notificationService.stopSOSAlert();
+      await notificationService.stopSOSAlert(sosId: sosMessage.id);
 
       if (!context.mounted) return;
 

@@ -35,8 +35,10 @@ class SOSListScreen extends StatelessWidget {
       body: Consumer<SOSProvider>(
         builder: (context, sosProvider, child) {
           final receivedMessages = sosProvider.receivedSOSMessages;
+          final activeSOS = sosProvider.activeSOS;
+          final totalMessages = receivedMessages.length + (activeSOS != null ? 1 : 0);
 
-          if (receivedMessages.isEmpty) {
+          if (totalMessages == 0) {
             return _buildEmptyState();
           }
 
@@ -56,7 +58,7 @@ class SOSListScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      '${receivedMessages.length}',
+                      '$totalMessages',
                       style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 48,
@@ -67,7 +69,7 @@ class SOSListScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      receivedMessages.length == 1
+                      totalMessages == 1
                           ? 'SOS Message'
                           : 'SOS Messages',
                       style: TextStyle(
@@ -87,9 +89,16 @@ class SOSListScreen extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: receivedMessages.length,
+                  itemCount: totalMessages,
                   itemBuilder: (context, index) {
-                    final sosMessage = receivedMessages[index];
+                    // Show active SOS first (if exists)
+                    if (activeSOS != null && index == 0) {
+                      return _buildActiveSOSCard(context, activeSOS, sosProvider);
+                    }
+
+                    // Then show received messages
+                    final messageIndex = activeSOS != null ? index - 1 : index;
+                    final sosMessage = receivedMessages[messageIndex];
                     return _buildSOSCard(context, sosMessage);
                   },
                 ),
@@ -97,6 +106,188 @@ class SOSListScreen extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildActiveSOSCard(BuildContext context, SOSMessage sosMessage, SOSProvider sosProvider) {
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'en_US');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF3B30), Color(0xFFFF6B58)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF3B30).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.broadcast_on_personal, size: 14, color: Colors.white),
+                      SizedBox(width: 6),
+                      Text(
+                        'YOUR ACTIVE SOS',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.emergency, color: Colors.white.withValues(alpha: 0.9), size: 24),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Message
+            Text(
+              sosMessage.message,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Time & Location
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 14, color: Colors.white.withValues(alpha: 0.9)),
+                const SizedBox(width: 6),
+                Text(
+                  dateFormat.format(sosMessage.createdAt),
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.sosDetail,
+                        arguments: sosMessage,
+                      );
+                    },
+                    icon: const Icon(Icons.location_on, size: 18),
+                    label: const Text('View Location'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFFFF3B30),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      // Confirm cancel
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Cancel SOS?', style: TextStyle(fontFamily: 'Poppins')),
+                          content: const Text(
+                            'Are you sure you want to cancel this SOS alert?',
+                            style: TextStyle(fontFamily: 'Poppins'),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('No', style: TextStyle(fontFamily: 'Poppins')),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Yes, Cancel', style: TextStyle(fontFamily: 'Poppins')),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true && context.mounted) {
+                        await sosProvider.cancelSOS();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('SOS cancelled', style: TextStyle(fontFamily: 'Poppins')),
+                              backgroundColor: Color(0xFF4CAF50),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.cancel, size: 18),
+                    label: const Text('Cancel'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

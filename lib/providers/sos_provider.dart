@@ -72,7 +72,7 @@ class SOSProvider with ChangeNotifier {
       notifyListeners();
 
       if (kDebugMode) {
-        print('🚨 Active SOS updated: ${_activeSOS?.id}');
+        print('Active SOS updated: ${_activeSOS?.id}');
       }
     });
   }
@@ -96,7 +96,7 @@ class SOSProvider with ChangeNotifier {
       notifyListeners();
 
       if (kDebugMode) {
-        print('📨 Received SOS messages: ${_receivedSOSMessages.length}');
+        print(' Received SOS messages: ${_receivedSOSMessages.length}');
       }
     });
   }
@@ -131,7 +131,7 @@ class SOSProvider with ChangeNotifier {
       final locationData = await _locationService.getCurrentLocationWithUrl();
 
       if (kDebugMode) {
-        print('📍 Location obtained: ${locationData['latitude']}, ${locationData['longitude']}');
+        print(' Location obtained: ${locationData['latitude']}, ${locationData['longitude']}');
       }
 
       // 2. Create SOS message
@@ -152,7 +152,7 @@ class SOSProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        print('📤 Creating SOS message:');
+        print(' Creating SOS message:');
         print('   Sender ID: $_currentUserId');
         print('   Sender Name: $senderName');
         print('   Emergency Contact IDs: $emergencyContactIds');
@@ -164,14 +164,14 @@ class SOSProvider with ChangeNotifier {
           .add(sosMessage.toMap());
 
       if (kDebugMode) {
-        print('🚨 SOS sent successfully! ID: ${docRef.id}');
+        print('SOS sent successfully! ID: ${docRef.id}');
       }
 
       _errorMessage = null;
     } catch (e) {
       _errorMessage = e.toString();
       if (kDebugMode) {
-        print('❌ Error sending SOS: $e');
+        print('Error sending SOS: $e');
       }
       rethrow;
     } finally {
@@ -200,7 +200,7 @@ class SOSProvider with ChangeNotifier {
       await _notificationService.cancelSOSNotification(_activeSOS!.id!);
 
       if (kDebugMode) {
-        print('✅ SOS cancelled: ${_activeSOS!.id}');
+        print('SOS cancelled: ${_activeSOS!.id}');
       }
 
       _activeSOS = null;
@@ -208,7 +208,7 @@ class SOSProvider with ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Failed to cancel SOS: $e';
       if (kDebugMode) {
-        print('❌ Error cancelling SOS: $e');
+        print('Error cancelling SOS: $e');
       }
       rethrow;
     }
@@ -228,17 +228,17 @@ class SOSProvider with ChangeNotifier {
       });
 
       // Cancel notification for this receiver
-      await _notificationService.stopSOSAlert();
+      await _notificationService.stopSOSAlert(sosId: sosId);
 
       if (kDebugMode) {
-        print('✅ SOS resolved: $sosId');
+        print('SOS resolved: $sosId');
       }
 
       notifyListeners();
     } catch (e) {
       _errorMessage = 'Failed to resolve SOS: $e';
       if (kDebugMode) {
-        print('❌ Error resolving SOS: $e');
+        print('Error resolving SOS: $e');
       }
       rethrow;
     }
@@ -250,11 +250,11 @@ class SOSProvider with ChangeNotifier {
       await _notificationService.cancelSOSNotification(sosId);
 
       if (kDebugMode) {
-        print('🔕 Dismissed SOS notification: $sosId');
+        print(' Dismissed SOS notification: $sosId');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error dismissing SOS notification: $e');
+        print('Error dismissing SOS notification: $e');
       }
     }
   }
@@ -275,7 +275,7 @@ class SOSProvider with ChangeNotifier {
 
         if (email.isEmpty) {
           if (kDebugMode) {
-            print('⚠️ Contact ${contact.nama} has no email');
+            print('Contact ${contact.nama} has no email');
           }
           continue;
         }
@@ -291,11 +291,11 @@ class SOSProvider with ChangeNotifier {
           final userId = querySnapshot.docs.first.id;
           userIds.add(userId);
           if (kDebugMode) {
-            print('✅ Found user ID for ${contact.nama}: $userId');
+            print('Found user ID for ${contact.nama}: $userId');
           }
         } else {
           if (kDebugMode) {
-            print('⚠️ No user found with email: $email');
+            print('No user found with email: $email');
           }
         }
       }
@@ -306,14 +306,14 @@ class SOSProvider with ChangeNotifier {
       }
 
       if (kDebugMode) {
-        print('👥 Found ${userIds.length} registered emergency contacts');
-        print('📋 User IDs: $userIds');
+        print(' Found ${userIds.length} registered emergency contacts');
+        print(' User IDs: $userIds');
       }
 
       return userIds;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error getting emergency contact user IDs: $e');
+        print('Error getting emergency contact user IDs: $e');
       }
       return [];
     }
