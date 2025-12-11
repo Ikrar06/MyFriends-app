@@ -3,10 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../providers/group_provider.dart';
 import '../../models/group_model.dart';
-import '../../widgets/group_tag.dart';
 
 class GroupManagementPage extends StatelessWidget {
-  const GroupManagementPage({Key? key}) : super(key: key);
+  const GroupManagementPage({super.key});
 
   void _showGroupDialog(BuildContext context, {Group? group}) {
     final isEditing = group != null;
@@ -63,7 +62,7 @@ class GroupManagementPage extends StatelessWidget {
                   currentColor = color;
                   // Convert Color to Hex string #RRGGBB
                   colorHex =
-                      '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+                      '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
                 },
               ),
             ],
@@ -91,11 +90,15 @@ class GroupManagementPage extends StatelessWidget {
                 } else {
                   await provider.addGroup(name, colorHex);
                 }
-                Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
               } catch (e) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
               }
             },
             child: Text('Save'),
@@ -197,8 +200,8 @@ class GroupManagementPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showGroupDialog(context),
-        child: Icon(Icons.add),
         backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add),
       ),
     );
   }

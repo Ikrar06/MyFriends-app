@@ -35,16 +35,28 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   // Check if this is an SOS notification
   final data = message.data;
-  final isSOS = data['type'] == 'sos' ||
-                message.notification?.title?.contains('SOS') == true ||
-                message.notification?.title?.contains('EMERGENCY') == true;
+  final notificationType = data['type'] ?? '';
+
+  // Stop SOS alerts if this is a cancelled/resolved notification
+  if (notificationType == 'sos_cancelled' || notificationType == 'sos_resolved') {
+    final notificationService = NotificationService();
+    await notificationService.stopSOSAlert(sosId: data['sosId']);
+
+    if (kDebugMode) {
+      print('Stopped SOS alert due to: $notificationType');
+    }
+    return; // Exit early, don't start spam
+  }
+
+  // Only spam for ACTIVE SOS notifications
+  final isSOS = notificationType == 'sos';
 
   if (isSOS && message.notification != null) {
     // For SOS notifications in background, use periodic timer
     final notificationService = NotificationService();
     await notificationService._initializeLocalNotifications();
 
-    // Start repeating notifications with 10s interval
+    // Start repeating notifications with 3s interval
     // This will run as long as Android allows the background handler to stay alive
     notificationService._startBackgroundSOSAlerts(
       message.notification!,
@@ -52,7 +64,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     );
 
     if (kDebugMode) {
-      print('Started background SOS alerts with 10s interval');
+      print('Started background SOS alerts with 3s interval');
     }
   }
 
@@ -243,10 +255,8 @@ class NotificationService {
         }
       }
 
-      // Check if this is an active SOS notification
-      final isSOS = notificationType == 'sos' ||
-                    notification.title?.contains('SOS') == true ||
-                    notification.title?.contains('EMERGENCY') == true;
+      // Check if this is an active SOS notification (only 'sos' type, not cancelled/resolved)
+      final isSOS = notificationType == 'sos';
 
       if (isSOS) {
         // Show persistent SOS notification with ongoing alarm
@@ -386,9 +396,9 @@ class NotificationService {
     RemoteNotification notification,
     Map<String, dynamic> data,
   ) async {
-    // Schedule 18 notifications (10s interval x 18 = 3 minutes total)
-    for (int i = 1; i <= 18; i++) {
-      final scheduledTime = DateTime.now().add(Duration(seconds: 10 * i));
+    // Schedule 60 notifications (3s interval x 60 = 3 minutes total)
+    for (int i = 1; i <= 60; i++) {
+      final scheduledTime = DateTime.now().add(Duration(seconds: 3 * i));
 
       final vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
 
@@ -434,11 +444,11 @@ class NotificationService {
     }
 
     if (kDebugMode) {
-      print('Scheduled 18 repeating SOS notifications (every 10s for 3 mins)');
+      print('Scheduled 60 repeating SOS notifications (every 3s for 3 mins)');
     }
   }
 
-  /// Start repeating SOS alerts in background with 10s interval
+  /// Start repeating SOS alerts in background with 3s interval
   ///
   /// Note: This will only work while the background handler is alive
   /// For longer-term notifications, scheduled notifications are used
@@ -447,7 +457,7 @@ class NotificationService {
     Map<String, dynamic> data,
   ) async {
     int alertCount = 0;
-    final maxAlerts = 18; // Maximum 3 minutes worth of alerts
+    final maxAlerts = 60; // Maximum 3 minutes worth of alerts (60 * 3s = 180s)
 
     // Show first notification immediately
     await _showSingleSOSNotification(notification, data, ++alertCount);
@@ -455,8 +465,8 @@ class NotificationService {
     // Cancel previous timer if exists
     _backgroundSOSTimer?.cancel();
 
-    // Use Timer.periodic to show notifications every 10 seconds
-    _backgroundSOSTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    // Use Timer.periodic to show notifications every 3 seconds
+    _backgroundSOSTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       // Check if SOS alert was stopped
       if (_isSOSAlertStopped) {
         timer.cancel();
@@ -542,8 +552,8 @@ class NotificationService {
       print(' Starting SOS alert timer');
     }
 
-    // Repeat every 10 seconds for more aggressive alerting
-    _sosVibrationTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    // Repeat every 3 seconds for more aggressive alerting
+    _sosVibrationTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       // Check if SOS alert was stopped
       if (_isSOSAlertStopped) {
         timer.cancel();
@@ -585,8 +595,8 @@ class NotificationService {
     _backgroundSOSTimer = null;
     await _localNotifications.cancel(99999); // Cancel SOS notification
 
-    // Cancel all scheduled notifications (99999 + 1 to 99999 + 18)
-    for (int i = 1; i <= 18; i++) {
+    // Cancel all scheduled notifications (99999 + 1 to 99999 + 60)
+    for (int i = 1; i <= 60; i++) {
       await _localNotifications.cancel(99999 + i);
     }
 

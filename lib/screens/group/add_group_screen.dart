@@ -3,8 +3,6 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/contact_provider.dart';
-import '../../models/contact_model.dart';
-import '../../models/group_model.dart';
 
 /// Add Group Screen
 ///
@@ -141,7 +139,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                                     setState(() {
                                       _currentColor = color;
                                       _colorHex =
-                                          '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+                                          '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
                                     });
                                     Navigator.of(context).pop();
                                   },
@@ -258,7 +256,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                               backgroundColor: Colors.white,
                               selectedColor: const Color(
                                 0xFFFE7743,
-                              ).withOpacity(0.2),
+                              ).withValues(alpha: 0.2),
                               checkmarkColor: const Color(0xFFFE7743),
                               labelStyle: TextStyle(
                                 fontFamily: 'Poppins',

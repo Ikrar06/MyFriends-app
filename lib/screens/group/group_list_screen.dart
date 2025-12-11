@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/contact_provider.dart';
-import '../../models/contact_model.dart';
 import '../../routes/app_routes.dart';
 
 /// Group List Screen
