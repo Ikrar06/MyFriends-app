@@ -50,16 +50,16 @@ async function checkTokens() {
     
     if (tokenA && tokenB) {
       if (tokenA === tokenB) {
-        console.log('⚠️ WARNING: Both users have THE SAME FCM token!');
+        console.log('WARNING: Both users have THE SAME FCM token!');
         console.log('This is the problem - notifications will go to the same device.');
       } else {
-        console.log('✅ Tokens are DIFFERENT (correct)');
+        console.log('Tokens are DIFFERENT (correct)');
       }
     } else if (!tokenB) {
-      console.log('⚠️ WARNING: User B has NO FCM token!');
+      console.log('WARNING: User B has NO FCM token!');
       console.log('This is why notifications are not working correctly.');
     } else if (!tokenA) {
-      console.log('⚠️ WARNING: User A has NO FCM token!');
+      console.log('WARNING: User A has NO FCM token!');
     }
   }
   

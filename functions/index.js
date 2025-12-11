@@ -30,7 +30,7 @@ exports.onSOSCreate = functions.firestore
     const sosId = context.params.sosId;
     const sosData = snapshot.data();
 
-    console.log('🚨 New SOS created:', sosId);
+    console.log('New SOS created:', sosId);
     console.log('SOS Data:', sosData);
 
     try {
@@ -41,19 +41,19 @@ exports.onSOSCreate = functions.firestore
       emergencyContactIds = emergencyContactIds.filter(id => id !== sosData.senderId);
 
       if (emergencyContactIds.length === 0) {
-        console.log('⚠️ No emergency contacts found (after excluding sender)');
+        console.log('No emergency contacts found (after excluding sender)');
         return null;
       }
 
-      console.log(`📤 Sending to ${emergencyContactIds.length} emergency contacts (excluding sender)`);
-      console.log('📋 Emergency Contact IDs:', emergencyContactIds);
+      console.log(`Sending to ${emergencyContactIds.length} emergency contacts (excluding sender)`);
+      console.log('Emergency Contact IDs:', emergencyContactIds);
       console.log('🚫 Sender ID (excluded):', sosData.senderId);
 
       // Get FCM tokens for all emergency contacts
       const tokens = await getEmergencyContactTokens(emergencyContactIds);
 
       if (tokens.length === 0) {
-        console.log('⚠️ No FCM tokens found for emergency contacts');
+        console.log('No FCM tokens found for emergency contacts');
         return null;
       }
 
@@ -64,7 +64,7 @@ exports.onSOSCreate = functions.firestore
 
       // Prepare notification payload
       const notification = {
-        title: `🚨 EMERGENCY SOS`,
+        title: `EMERGENCY SOS`,
         body: `${sosData.senderName} sent an emergency SOS! Tap to view location.`,
       };
 
@@ -115,9 +115,9 @@ exports.onSOSCreate = functions.firestore
 
       const response = await messaging.sendEachForMulticast(message);
 
-      console.log(`✅ Successfully sent ${response.successCount} notifications`);
+      console.log(`Successfully sent ${response.successCount} notifications`);
       if (response.failureCount > 0) {
-        console.log(`❌ Failed to send ${response.failureCount} notifications`);
+        console.log(`Failed to send ${response.failureCount} notifications`);
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
             console.log(`Error for token ${tokens[idx]}:`, resp.error);
@@ -127,7 +127,7 @@ exports.onSOSCreate = functions.firestore
 
       return null;
     } catch (error) {
-      console.error('❌ Error in onSOSCreate:', error);
+      console.error('Error in onSOSCreate:', error);
       return null;
     }
   });
@@ -152,7 +152,7 @@ exports.onSOSUpdate = functions.firestore
     const wasResolved = beforeData.status === 'active' && afterData.status === 'resolved';
 
     if (wasCancelled) {
-      console.log('✅ SOS cancelled:', sosId);
+      console.log('SOS cancelled:', sosId);
 
       try {
         // Get emergency contact user IDs (exclude sender)
@@ -162,23 +162,23 @@ exports.onSOSUpdate = functions.firestore
         emergencyContactIds = emergencyContactIds.filter(id => id !== afterData.senderId);
 
         if (emergencyContactIds.length === 0) {
-          console.log('⚠️ No emergency contacts found (after excluding sender)');
+          console.log('No emergency contacts found (after excluding sender)');
           return null;
         }
 
-        console.log(`📤 Sending cancellation to ${emergencyContactIds.length} emergency contacts (excluding sender)`);
+        console.log(`Sending cancellation to ${emergencyContactIds.length} emergency contacts (excluding sender)`);
 
         // Get FCM tokens
         const tokens = await getEmergencyContactTokens(emergencyContactIds);
 
         if (tokens.length === 0) {
-          console.log('⚠️ No FCM tokens found');
+          console.log('No FCM tokens found');
           return null;
         }
 
         // Send cancellation notification
         const notification = {
-          title: `✅ SOS Cancelled - ${afterData.senderName}`,
+          title: `SOS Cancelled - ${afterData.senderName}`,
           body: `${afterData.senderName} has cancelled the emergency SOS.`,
         };
 
@@ -204,40 +204,40 @@ exports.onSOSUpdate = functions.firestore
 
         const response = await messaging.sendEachForMulticast(message);
 
-        console.log(`✅ Successfully sent ${response.successCount} cancellation notifications`);
+        console.log(`Successfully sent ${response.successCount} cancellation notifications`);
         if (response.failureCount > 0) {
-          console.log(`❌ Failed to send ${response.failureCount} notifications`);
+          console.log(`Failed to send ${response.failureCount} notifications`);
         }
 
         return null;
       } catch (error) {
-        console.error('❌ Error in onSOSUpdate (cancel):', error);
+        console.error('Error in onSOSUpdate (cancel):', error);
         return null;
       }
     }
 
     if (wasResolved) {
-      console.log('✅ SOS resolved:', sosId);
-      console.log('📋 Full SOS Data:', afterData);
+      console.log('SOS resolved:', sosId);
+      console.log('Full SOS Data:', afterData);
 
       try {
         // Send "SOS Resolved" notification to SENDER ONLY
         const senderIds = [afterData.senderId];
 
-        console.log('📤 Sending resolution notification to sender:', afterData.senderId);
-        console.log('📧 Sender email/name:', afterData.senderName);
+        console.log('Sending resolution notification to sender:', afterData.senderId);
+        console.log('Sender email/name:', afterData.senderName);
 
         // Get FCM token for sender
         const tokens = await getEmergencyContactTokens(senderIds);
 
         if (tokens.length === 0) {
-          console.log('⚠️ No FCM tokens found');
+          console.log('No FCM tokens found');
           return null;
         }
 
         // Send resolved notification
         const notification = {
-          title: `✅ SOS Resolved - ${afterData.senderName}`,
+          title: `SOS Resolved - ${afterData.senderName}`,
           body: `${afterData.senderName}'s emergency has been resolved.`,
         };
 
@@ -263,14 +263,14 @@ exports.onSOSUpdate = functions.firestore
 
         const response = await messaging.sendEachForMulticast(message);
 
-        console.log(`✅ Successfully sent ${response.successCount} resolved notifications`);
+        console.log(`Successfully sent ${response.successCount} resolved notifications`);
         if (response.failureCount > 0) {
-          console.log(`❌ Failed to send ${response.failureCount} notifications`);
+          console.log(`Failed to send ${response.failureCount} notifications`);
         }
 
         return null;
       } catch (error) {
-        console.error('❌ Error in onSOSUpdate (resolve):', error);
+        console.error('Error in onSOSUpdate (resolve):', error);
         return null;
       }
     }
@@ -300,19 +300,19 @@ async function getEmergencyContactTokens(userIds) {
         const userData = doc.data();
         if (userData.fcmToken) {
           tokens.push(userData.fcmToken);
-          console.log(`✅ Found token for user: ${doc.id} (${userData.email || 'no email'})`);
+          console.log(`Found token for user: ${doc.id} (${userData.email || 'no email'})`);
           console.log(`   Token: ${userData.fcmToken.substring(0, 30)}...`);
         } else {
-          console.log(`⚠️ No FCM token for user: ${doc.id} (${userData.email || 'no email'})`);
+          console.log(`No FCM token for user: ${doc.id} (${userData.email || 'no email'})`);
         }
       } else {
-        console.log(`⚠️ User not found: ${doc.id}`);
+        console.log(`User not found: ${doc.id}`);
       }
     });
 
     return tokens;
   } catch (error) {
-    console.error('❌ Error getting FCM tokens:', error);
+    console.error('Error getting FCM tokens:', error);
     return [];
   }
 }
