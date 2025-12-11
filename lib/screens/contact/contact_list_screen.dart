@@ -5,9 +5,26 @@ import '../../routes/app_routes.dart';
 
 /// Contact List Screen
 ///
-/// Clean UI following design specifications
-class ContactListScreen extends StatelessWidget {
+/// Clean UI following design specifications with search functionality
+class ContactListScreen extends StatefulWidget {
   const ContactListScreen({super.key});
+
+  @override
+  State<ContactListScreen> createState() => _ContactListScreenState();
+}
+
+class _ContactListScreenState extends State<ContactListScreen> {
+  // Controller untuk search bar
+  final TextEditingController _searchController = TextEditingController();
+
+  // Variable untuk menyimpan query pencarian
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +50,58 @@ class ContactListScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search contacts...',
+                  hintStyle: const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Color(0xFFFE7743),
+                  ),
+                  // Tampilkan tombol clear jika ada text
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            // Clear search
+                            setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                style: const TextStyle(fontFamily: 'Poppins'),
+                onChanged: (value) {
+                  // Update search query setiap user ketik
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             // Contact List
             Expanded(
@@ -75,11 +143,56 @@ class ContactListScreen extends StatelessWidget {
                     );
                   }
 
+                  // Filter contacts berdasarkan search query
+                  final filteredContacts = contactProvider.contacts.where((contact) {
+                    // Jika search kosong, tampilkan semua
+                    if (_searchQuery.isEmpty) {
+                      return true;
+                    }
+
+                    // Cek apakah nama atau nomor mengandung search query
+                    final namaMatch = contact.nama.toLowerCase().contains(_searchQuery);
+                    final nomorMatch = contact.nomor.toLowerCase().contains(_searchQuery);
+
+                    return namaMatch || nomorMatch;
+                  }).toList();
+
+                  // Jika hasil pencarian kosong
+                  if (filteredContacts.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No contacts found',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Try different keywords',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: contactProvider.contacts.length,
+                    itemCount: filteredContacts.length,
                     itemBuilder: (context, index) {
-                      final contact = contactProvider.contacts[index];
+                      final contact = filteredContacts[index];
                       return GestureDetector(
                         onTap: () => Navigator.pushNamed(
                           context,
