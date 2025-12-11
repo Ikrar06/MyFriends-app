@@ -6,16 +6,16 @@ class GroupTag extends StatelessWidget {
   final VoidCallback? onDeleted;
 
   const GroupTag({
-    Key? key,
+    super.key,
     required this.label,
     required this.colorHex,
     this.onDeleted,
-  }) : super(key: key);
+  });
 
   Color _hexToColor(String hex) {
     hex = hex.replaceAll('#', '');
     if (hex.length == 6) {
-      hex = 'FF' + hex;
+      hex = 'FF$hex';
     }
     return Color(int.parse(hex, radix: 16));
   }

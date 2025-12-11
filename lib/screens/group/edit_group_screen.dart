@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/contact_provider.dart';
 import '../../models/group_model.dart';
-import '../../models/contact_model.dart';
 
 /// Edit Group Screen
 ///
@@ -269,7 +268,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                                     setState(() {
                                       _currentColor = color;
                                       _colorHex =
-                                          '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+                                          '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
                                     });
                                     Navigator.of(context).pop();
                                   },
@@ -387,7 +386,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                               backgroundColor: Colors.white,
                               selectedColor: Color(
                                 int.parse(_colorHex.replaceAll('#', '0xFF')),
-                              ).withOpacity(0.2),
+                              ).withValues(alpha: 0.2),
                               checkmarkColor: Color(
                                 int.parse(_colorHex.replaceAll('#', '0xFF')),
                               ),

@@ -21,8 +21,9 @@ class ContactService {
 
   /// Get stream (real-time) of all contacts belonging to user
   Stream<List<Contact>> getContactsStream() {
-    if (_currentUserId == null)
+    if (_currentUserId == null) {
       return Stream.value([]); // Return empty list if user is null
+    }
 
     return _firestore
         .collection(FirebaseConstants.contactsCollection)

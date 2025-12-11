@@ -494,8 +494,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               onSelected: (bool selected) {
                                 setState(() {
                                   if (selected) {
-                                    if (group.id != null)
+                                    if (group.id != null) {
                                       _selectedGroupIds.add(group.id!);
+                                    }
                                   } else {
                                     _selectedGroupIds.remove(group.id);
                                   }
@@ -505,12 +506,12 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 int.parse(
                                   group.colorHex.replaceAll('#', '0xFF'),
                                 ),
-                              ).withOpacity(0.1),
+                              ).withValues(alpha: 0.1),
                               selectedColor: Color(
                                 int.parse(
                                   group.colorHex.replaceAll('#', '0xFF'),
                                 ),
-                              ).withOpacity(0.3),
+                              ).withValues(alpha: 0.3),
                               checkmarkColor: Colors.black,
                               labelStyle: TextStyle(
                                 color: Colors.black87,
