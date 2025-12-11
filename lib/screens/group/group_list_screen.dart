@@ -6,9 +6,26 @@ import '../../routes/app_routes.dart';
 
 /// Group List Screen
 ///
-/// Clean UI following design specifications
-class GroupListScreen extends StatelessWidget {
+/// Clean UI following design specifications with search functionality
+class GroupListScreen extends StatefulWidget {
   const GroupListScreen({super.key});
+
+  @override
+  State<GroupListScreen> createState() => _GroupListScreenState();
+}
+
+class _GroupListScreenState extends State<GroupListScreen> {
+  // Controller untuk search bar
+  final TextEditingController _searchController = TextEditingController();
+
+  // Variable untuk menyimpan query pencarian
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +51,58 @@ class GroupListScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search groups...',
+                  hintStyle: const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Color(0xFFFE7743),
+                  ),
+                  // Tampilkan tombol clear jika ada text
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            // Clear search
+                            setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                style: const TextStyle(fontFamily: 'Poppins'),
+                onChanged: (value) {
+                  // Update search query setiap user ketik
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             // Group List
             Expanded(
@@ -82,13 +150,57 @@ class GroupListScreen extends StatelessWidget {
                     );
                   }
 
+                  // Filter groups berdasarkan search query
+                  final filteredGroups = groupProvider.groups.where((group) {
+                    // Jika search kosong, tampilkan semua
+                    if (_searchQuery.isEmpty) {
+                      return true;
+                    }
+
+                    // Cek apakah nama group mengandung search query
+                    final namaMatch = group.nama.toLowerCase().contains(_searchQuery);
+
+                    return namaMatch;
+                  }).toList();
+
+                  // Jika hasil pencarian kosong
+                  if (filteredGroups.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No groups found',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Try different keywords',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   return Consumer<ContactProvider>(
                     builder: (context, contactProvider, child) {
                       return ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: groupProvider.groups.length,
+                        itemCount: filteredGroups.length,
                         itemBuilder: (context, index) {
-                          final group = groupProvider.groups[index];
+                          final group = filteredGroups[index];
                           final memberCount = contactProvider.contacts
                               .where((c) => c.groupIds.contains(group.id))
                               .length;
