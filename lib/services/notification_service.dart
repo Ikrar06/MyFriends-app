@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 
 /// Background message handler - harus top-level function
 @pragma('vm:entry-point')
@@ -13,6 +16,49 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     print('Handling background message: ${message.messageId}');
     print('Title: ${message.notification?.title}');
     print('Body: ${message.notification?.body}');
+  }
+
+  // Initialize Firebase in background isolate
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // Already initialized
+  }
+
+  // Initialize timezone for scheduled notifications
+  try {
+    tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
+  } catch (e) {
+    // Already initialized
+  }
+
+  // Check if this is an SOS notification
+  final data = message.data;
+  final isSOS = data['type'] == 'sos' ||
+                message.notification?.title?.contains('SOS') == true ||
+                message.notification?.title?.contains('EMERGENCY') == true;
+
+  if (isSOS && message.notification != null) {
+    // For SOS notifications in background, use periodic timer
+    final notificationService = NotificationService();
+    await notificationService._initializeLocalNotifications();
+
+    // Start repeating notifications with 10s interval
+    // This will run as long as Android allows the background handler to stay alive
+    notificationService._startBackgroundSOSAlerts(
+      message.notification!,
+      data,
+    );
+
+    if (kDebugMode) {
+      print('Started background SOS alerts with 10s interval');
+    }
+  }
+
+  // Let FCM show the initial notification automatically
+  if (kDebugMode) {
+    print('Background message handled');
   }
 }
 
@@ -28,6 +74,12 @@ class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   bool _isInitialized = false;
+
+  // SOS alert tracking
+  Timer? _sosVibrationTimer;
+  Timer? _backgroundSOSTimer; // Timer for background SOS alerts
+  bool _isSOSAlertStopped = false;
+  String? _stoppedSOSId; // Track which SOS was stopped
 
   // Callback untuk navigation
   Function(String?)? onNotificationTap;
@@ -55,11 +107,11 @@ class NotificationService {
 
       _isInitialized = true;
       if (kDebugMode) {
-        print('✅ Notification Service initialized successfully');
+        print('Notification Service initialized successfully');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error initializing notification service: $e');
+        print('Error initializing notification service: $e');
       }
     }
   }
@@ -159,7 +211,7 @@ class NotificationService {
   /// Handle foreground messages (app is open)
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     if (kDebugMode) {
-      print('📩 Foreground message received:');
+      print('Foreground message received:');
       print('Title: ${message.notification?.title}');
       print('Body: ${message.notification?.body}');
       print('Data: ${message.data}');
@@ -184,10 +236,10 @@ class NotificationService {
       // Check if SOS was cancelled or resolved - stop auto-repeat timer
       if (notificationType == 'sos_cancelled' || notificationType == 'sos_resolved') {
         // Stop SOS alert timer
-        await stopSOSAlert();
+        await stopSOSAlert(sosId: data['sosId']);
 
         if (kDebugMode) {
-          print('🔕 Stopped SOS alert due to: $notificationType');
+          print('Stopped SOS alert due to: $notificationType');
         }
       }
 
@@ -233,10 +285,22 @@ class NotificationService {
     RemoteNotification notification,
     Map<String, dynamic> data,
   ) async {
-    // Check if SOS was already stopped
-    if (_isSOSAlertStopped) {
+    final currentSOSId = data['sosId'] ?? '';
+
+    // Check if this is a NEW SOS (different from stopped one)
+    if (_isSOSAlertStopped && currentSOSId != '' && _stoppedSOSId != currentSOSId) {
+      // This is a new SOS, reset the flag
+      _isSOSAlertStopped = false;
+      _stoppedSOSId = null;
       if (kDebugMode) {
-        print('⏹️ SOS alert is stopped, not showing notification');
+        print('New SOS detected, resetting stop flag');
+      }
+    }
+
+    // Check if THIS specific SOS was already stopped
+    if (_isSOSAlertStopped && _stoppedSOSId == currentSOSId) {
+      if (kDebugMode) {
+        print('SOS alert is stopped, not showing notification');
       }
       return;
     }
@@ -246,6 +310,7 @@ class NotificationService {
     // Vibration pattern: wait 0ms, vibrate 1000ms, wait 500ms, vibrate 1000ms
     final vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
 
+    // Show immediate notification
     await _localNotifications.show(
       sosNotificationId,
       '🆘 ${notification.title}',
@@ -264,7 +329,10 @@ class NotificationService {
           playSound: true,
           enableVibration: true,
           vibrationPattern: vibrationPattern,
-          // Use default notification sound instead of custom
+
+          // Make sound more noticeable - use alarm audio stream
+          // This bypasses "Do Not Disturb" and plays at alarm volume
+          audioAttributesUsage: AudioAttributesUsage.alarm,
 
           // Persistent notification
           ongoing: true, // Can't be swiped away
@@ -306,14 +374,161 @@ class NotificationService {
       payload: data['sosId'] ?? '',
     );
 
-    // Schedule repeated vibration every 30 seconds
+    // Schedule repeating notifications (works in background too!)
+    await _scheduleRepeatingSOSNotifications(notification, data);
+
+    // Also start timer for foreground (if app is open)
     _scheduleRepeatingSOSVibration(sosNotificationId, notification, data);
   }
 
-  /// Schedule repeating SOS vibration every 30 seconds
-  Timer? _sosVibrationTimer;
-  bool _isSOSAlertStopped = false;
+  /// Schedule multiple repeating notifications (works in background)
+  Future<void> _scheduleRepeatingSOSNotifications(
+    RemoteNotification notification,
+    Map<String, dynamic> data,
+  ) async {
+    // Schedule 18 notifications (10s interval x 18 = 3 minutes total)
+    for (int i = 1; i <= 18; i++) {
+      final scheduledTime = DateTime.now().add(Duration(seconds: 10 * i));
 
+      final vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
+
+      await _localNotifications.zonedSchedule(
+        99999 + i, // Different ID for each scheduled notification
+        '🆘 ${notification.title}',
+        '${notification.body} (Alert #${i + 1})',
+        tz.TZDateTime.from(scheduledTime, tz.local),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'sos_channel',
+            'SOS Emergency Alerts',
+            channelDescription: 'Critical SOS emergency notifications',
+            importance: Importance.max,
+            priority: Priority.max,
+            icon: '@mipmap/ic_launcher',
+            color: const Color(0xFFFF3B30),
+            playSound: true,
+            enableVibration: true,
+            vibrationPattern: vibrationPattern,
+            audioAttributesUsage: AudioAttributesUsage.alarm,
+            ongoing: true,
+            autoCancel: false,
+            fullScreenIntent: true,
+            enableLights: true,
+            ledColor: const Color(0xFFFF3B30),
+            ledOnMs: 1000,
+            ledOffMs: 500,
+            category: AndroidNotificationCategory.alarm,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            interruptionLevel: InterruptionLevel.critical,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: data['sosId'] ?? '',
+      );
+    }
+
+    if (kDebugMode) {
+      print('Scheduled 18 repeating SOS notifications (every 10s for 3 mins)');
+    }
+  }
+
+  /// Start repeating SOS alerts in background with 10s interval
+  ///
+  /// Note: This will only work while the background handler is alive
+  /// For longer-term notifications, scheduled notifications are used
+  void _startBackgroundSOSAlerts(
+    RemoteNotification notification,
+    Map<String, dynamic> data,
+  ) async {
+    int alertCount = 0;
+    final maxAlerts = 18; // Maximum 3 minutes worth of alerts
+
+    // Show first notification immediately
+    await _showSingleSOSNotification(notification, data, ++alertCount);
+
+    // Cancel previous timer if exists
+    _backgroundSOSTimer?.cancel();
+
+    // Use Timer.periodic to show notifications every 10 seconds
+    _backgroundSOSTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      // Check if SOS alert was stopped
+      if (_isSOSAlertStopped) {
+        timer.cancel();
+        if (kDebugMode) {
+          print('Background SOS alerts stopped (alert muted)');
+        }
+        return;
+      }
+
+      alertCount++;
+
+      if (alertCount > maxAlerts) {
+        timer.cancel();
+        if (kDebugMode) {
+          print('Background SOS alerts stopped (max reached)');
+        }
+        return;
+      }
+
+      await _showSingleSOSNotification(notification, data, alertCount);
+
+      if (kDebugMode) {
+        print('Background SOS alert #$alertCount at ${DateTime.now()}');
+      }
+    });
+  }
+
+  /// Show a single SOS notification
+  Future<void> _showSingleSOSNotification(
+    RemoteNotification notification,
+    Map<String, dynamic> data,
+    int alertNumber,
+  ) async {
+    final vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
+
+    await _localNotifications.show(
+      99999 + alertNumber, // Different ID for each notification
+      '🆘 ${notification.title}',
+      '${notification.body} (Alert #$alertNumber)',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'sos_channel',
+          'SOS Emergency Alerts',
+          channelDescription: 'Critical SOS emergency notifications',
+          importance: Importance.max,
+          priority: Priority.max,
+          icon: '@mipmap/ic_launcher',
+          color: const Color(0xFFFF3B30),
+          playSound: true,
+          enableVibration: true,
+          vibrationPattern: vibrationPattern,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+          ongoing: true,
+          autoCancel: false,
+          enableLights: true,
+          ledColor: const Color(0xFFFF3B30),
+          ledOnMs: 1000,
+          ledOffMs: 500,
+          category: AndroidNotificationCategory.alarm,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          interruptionLevel: InterruptionLevel.critical,
+        ),
+      ),
+      payload: data['sosId'] ?? '',
+    );
+  }
+
+  /// Schedule repeating SOS vibration every 30 seconds
   void _scheduleRepeatingSOSVibration(
     int notificationId,
     RemoteNotification notification,
@@ -324,16 +539,16 @@ class NotificationService {
     _isSOSAlertStopped = false;
 
     if (kDebugMode) {
-      print('⏰ Starting SOS alert timer');
+      print(' Starting SOS alert timer');
     }
 
-    // Repeat every 30 seconds
-    _sosVibrationTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+    // Repeat every 10 seconds for more aggressive alerting
+    _sosVibrationTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       // Check if SOS alert was stopped
       if (_isSOSAlertStopped) {
         timer.cancel();
         if (kDebugMode) {
-          print('⏹️ SOS alert timer stopped (flag check)');
+          print(' SOS alert timer stopped (flag check)');
         }
         return;
       }
@@ -347,35 +562,43 @@ class NotificationService {
         await _showPersistentSOSNotification(notification, data);
 
         if (kDebugMode) {
-          print('🔔 SOS alert repeated at ${DateTime.now()}');
+          print(' SOS alert repeated at ${DateTime.now()}');
         }
       } else {
         // Notification was dismissed, stop timer
         timer.cancel();
         _isSOSAlertStopped = true;
         if (kDebugMode) {
-          print('⏹️ SOS alert stopped (notification dismissed)');
+          print(' SOS alert stopped (notification dismissed)');
         }
       }
     });
   }
 
   /// Stop SOS alert manually
-  Future<void> stopSOSAlert() async {
+  Future<void> stopSOSAlert({String? sosId}) async {
     _isSOSAlertStopped = true;
+    _stoppedSOSId = sosId; // Remember which SOS was stopped
     _sosVibrationTimer?.cancel();
     _sosVibrationTimer = null;
+    _backgroundSOSTimer?.cancel(); // Cancel background SOS timer
+    _backgroundSOSTimer = null;
     await _localNotifications.cancel(99999); // Cancel SOS notification
 
+    // Cancel all scheduled notifications (99999 + 1 to 99999 + 18)
+    for (int i = 1; i <= 18; i++) {
+      await _localNotifications.cancel(99999 + i);
+    }
+
     if (kDebugMode) {
-      print('⏹️ SOS alert manually stopped');
+      print(' SOS alert manually stopped (ID: $sosId)');
     }
   }
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
     if (kDebugMode) {
-      print('📱 Notification tapped: ${response.payload}');
+      print(' Notification tapped: ${response.payload}');
     }
 
     // Parse payload untuk SOS navigation
@@ -386,7 +609,7 @@ class NotificationService {
         final sosId = parts[0];
 
         if (kDebugMode) {
-          print('🔔 SOS ID from notification: $sosId');
+          print(' SOS ID from notification: $sosId');
         }
 
         // Call navigation callback with sosId
@@ -395,7 +618,7 @@ class NotificationService {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('❌ Error parsing notification payload: $e');
+          print('Error parsing notification payload: $e');
         }
       }
     }
@@ -404,14 +627,14 @@ class NotificationService {
   /// Handle notification opened from background/terminated
   void _handleNotificationOpened(RemoteMessage message) {
     if (kDebugMode) {
-      print('📱 Notification opened: ${message.data}');
+      print(' Notification opened: ${message.data}');
     }
 
     // Extract sosId from message data
     final sosId = message.data['sosId'];
     if (sosId != null && sosId.isNotEmpty) {
       if (kDebugMode) {
-        print('🔔 SOS ID from FCM: $sosId');
+        print(' SOS ID from FCM: $sosId');
       }
 
       // Call navigation callback with sosId
@@ -431,7 +654,7 @@ class NotificationService {
     try {
       final token = await _messaging.getToken();
       if (kDebugMode) {
-        print('🔑 FCM Token: $token');
+        print(' FCM Token: $token');
       }
 
       // Save token ke Firestore untuk current user
@@ -444,7 +667,7 @@ class NotificationService {
           }, SetOptions(merge: true));
 
           if (kDebugMode) {
-            print('✅ FCM Token saved to Firestore');
+            print('FCM Token saved to Firestore');
           }
         }
       }
@@ -452,7 +675,7 @@ class NotificationService {
       return token;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error getting FCM token: $e');
+        print('Error getting FCM token: $e');
       }
       return null;
     }
@@ -466,7 +689,7 @@ class NotificationService {
       final token = await _messaging.getToken();
       if (token == null) {
         if (kDebugMode) {
-          print('⚠️ FCM Token is null, cannot save');
+          print('FCM Token is null, cannot save');
         }
         return;
       }
@@ -474,7 +697,7 @@ class NotificationService {
       final uid = userId ?? _auth.currentUser?.uid;
       if (uid == null) {
         if (kDebugMode) {
-          print('⚠️ User ID is null, cannot save FCM token');
+          print('User ID is null, cannot save FCM token');
         }
         return;
       }
@@ -483,7 +706,7 @@ class NotificationService {
       final userEmail = _auth.currentUser?.email ?? 'unknown';
 
       if (kDebugMode) {
-        print('📝 Saving FCM Token:');
+        print(' Saving FCM Token:');
         print('   User ID: $uid');
         print('   Email: $userEmail');
         print('   Token: ${token.substring(0, 30)}...');
@@ -495,11 +718,11 @@ class NotificationService {
       }, SetOptions(merge: true));
 
       if (kDebugMode) {
-        print('✅ FCM Token saved successfully to Firestore');
+        print('FCM Token saved successfully to Firestore');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error saving FCM token: $e');
+        print('Error saving FCM token: $e');
       }
     }
   }
@@ -518,11 +741,11 @@ class NotificationService {
       }
 
       if (kDebugMode) {
-        print('🗑️ FCM Token deleted');
+        print(' FCM Token deleted');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error deleting FCM token: $e');
+        print('Error deleting FCM token: $e');
       }
     }
   }
@@ -532,11 +755,11 @@ class NotificationService {
     try {
       await _messaging.subscribeToTopic(topic);
       if (kDebugMode) {
-        print('✅ Subscribed to topic: $topic');
+        print('Subscribed to topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error subscribing to topic: $e');
+        print('Error subscribing to topic: $e');
       }
     }
   }
@@ -546,11 +769,11 @@ class NotificationService {
     try {
       await _messaging.unsubscribeFromTopic(topic);
       if (kDebugMode) {
-        print('✅ Unsubscribed from topic: $topic');
+        print('Unsubscribed from topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error unsubscribing from topic: $e');
+        print('Error unsubscribing from topic: $e');
       }
     }
   }
@@ -575,6 +798,7 @@ class NotificationService {
         playSound: true,
         enableVibration: true,
         vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]), // Custom vibration
+        audioAttributesUsage: AudioAttributesUsage.alarm, // Use alarm audio stream
         ongoing: true, // Persistent notification
         autoCancel: false, // Don't auto-dismiss
         fullScreenIntent: true, // Show on lock screen
@@ -618,11 +842,11 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        print('🚨 SOS Notification shown for: $senderName');
+        print('SOS Notification shown for: $senderName');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error showing SOS notification: $e');
+        print('Error showing SOS notification: $e');
       }
     }
   }
@@ -632,11 +856,11 @@ class NotificationService {
     try {
       await _localNotifications.cancel(sosId.hashCode);
       if (kDebugMode) {
-        print('✅ SOS Notification cancelled');
+        print('SOS Notification cancelled');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error cancelling SOS notification: $e');
+        print('Error cancelling SOS notification: $e');
       }
     }
   }
@@ -660,7 +884,7 @@ class NotificationService {
         ?.createNotificationChannel(sosChannel);
 
     if (kDebugMode) {
-      print('✅ SOS Notification Channel created');
+      print('SOS Notification Channel created');
     }
   }
 }
