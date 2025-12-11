@@ -323,7 +323,7 @@ class NotificationService {
     // Show immediate notification
     await _localNotifications.show(
       sosNotificationId,
-      '🆘 ${notification.title}',
+      '${notification.title}',
       notification.body,
       NotificationDetails(
         android: AndroidNotificationDetails(
@@ -404,7 +404,7 @@ class NotificationService {
 
       await _localNotifications.zonedSchedule(
         99999 + i, // Different ID for each scheduled notification
-        '🆘 ${notification.title}',
+        '${notification.title}',
         '${notification.body} (Alert #${i + 1})',
         tz.TZDateTime.from(scheduledTime, tz.local),
         NotificationDetails(
@@ -504,7 +504,7 @@ class NotificationService {
 
     await _localNotifications.show(
       99999 + alertNumber, // Different ID for each notification
-      '🆘 ${notification.title}',
+      '${notification.title}',
       '${notification.body} (Alert #$alertNumber)',
       NotificationDetails(
         android: AndroidNotificationDetails(

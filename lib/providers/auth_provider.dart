@@ -151,6 +151,34 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// Reset Password - Send reset email
+  Future<void> resetPassword(String email) async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      // Kirim email reset password menggunakan Firebase
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (kDebugMode) {
+        print('Password reset email sent to: $email');
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle error spesifik Firebase
+      if (e.code == 'user-not-found') {
+        throw Exception('No user found with this email address.');
+      } else if (e.code == 'invalid-email') {
+        throw Exception('Invalid email address.');
+      } else {
+        throw Exception('Failed to send reset email: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('An error occurred: ${e.toString()}');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// Update display name
   Future<void> updateDisplayName(String displayName) async {
     if (_currentUser == null) {
