@@ -180,7 +180,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: const TextStyle(fontFamily: 'Poppins'),
                         validator: Validators.validatePassword,
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 12),
+
+                      // Forgot Password Link
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, AppRoutes.forgotPassword);
+                          },
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Color(0xFFFE7743),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
                       // Login Button
                       CustomButton(

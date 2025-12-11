@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myfriends_app/screens/auth/profile_screen.dart';
 import 'package:myfriends_app/screens/auth/register_screen.dart';
 import 'package:myfriends_app/screens/auth/edit_profile_screen.dart';
+import 'package:myfriends_app/screens/auth/forgot_password_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -30,6 +31,7 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
@@ -75,6 +77,11 @@ class AppRoutes {
       case register:
         return MaterialPageRoute(
           builder: (_) => const RegisterScreen(),
+        );
+
+      case forgotPassword:
+        return MaterialPageRoute(
+          builder: (_) => const ForgotPasswordScreen(),
         );
 
       case home:
