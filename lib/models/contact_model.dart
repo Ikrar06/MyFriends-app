@@ -10,6 +10,7 @@ class Contact {
   isEmergency; // Emergency contact status (renamed from isFavorite) [cite: 265]
   final String userId; // Owner's Firebase Auth UID [cite: 265]
   final List<String> groupIds; // List of Group IDs assigned to this contact
+  final String? note; // Private note for the contact (max 500 chars)
   final DateTime createdAt; // Creation timestamp [cite: 265]
   final DateTime updatedAt; // Last update timestamp [cite: 265]
 
@@ -22,6 +23,7 @@ class Contact {
     required this.isEmergency,
     required this.userId,
     this.groupIds = const [],
+    this.note,
     required this.createdAt,
     required this.updatedAt,
   }); // [cite: 267]
@@ -37,6 +39,7 @@ class Contact {
       isEmergency: false,
       userId: '',
       groupIds: [],
+      note: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -52,6 +55,7 @@ class Contact {
       'isEmergency': isEmergency,
       'userId': userId,
       'groupIds': groupIds,
+      'note': note,
       'createdAt': Timestamp.fromDate(
         createdAt,
       ), // Konversi DateTime ke Timestamp
@@ -74,6 +78,7 @@ class Contact {
           false, // Support both old and new field
       userId: data['userId'] ?? '',
       groupIds: List<String>.from(data['groupIds'] ?? []),
+      note: data['note'],
       // Konversi Timestamp dari Firestore ke DateTime
       createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
@@ -90,6 +95,7 @@ class Contact {
     bool? isEmergency,
     String? userId,
     List<String>? groupIds,
+    String? note,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -102,6 +108,7 @@ class Contact {
       isEmergency: isEmergency ?? this.isEmergency,
       userId: userId ?? this.userId,
       groupIds: groupIds ?? this.groupIds,
+      note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -110,6 +117,6 @@ class Contact {
   // Override toString untuk debugging [cite: 272]
   @override
   String toString() {
-    return 'Contact(id: $id, nama: $nama, nomor: $nomor, email: $email, isEmergency: $isEmergency, userId: $userId, groupIds: $groupIds)';
+    return 'Contact(id: $id, nama: $nama, nomor: $nomor, email: $email, isEmergency: $isEmergency, userId: $userId, groupIds: $groupIds, note: $note)';
   }
 }
