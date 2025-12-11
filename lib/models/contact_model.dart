@@ -6,8 +6,10 @@ class Contact {
   final String nomor; // Phone number (required, max 20) [cite: 265]
   final String email; // Email (required, max 100) [cite: 265]
   final String? photoUrl; // Firebase Storage URL (optional) [cite: 265]
-  final bool isEmergency; // Emergency contact status (renamed from isFavorite) [cite: 265]
+  final bool
+  isEmergency; // Emergency contact status (renamed from isFavorite) [cite: 265]
   final String userId; // Owner's Firebase Auth UID [cite: 265]
+  final List<String> groupIds; // List of Group IDs assigned to this contact
   final DateTime createdAt; // Creation timestamp [cite: 265]
   final DateTime updatedAt; // Last update timestamp [cite: 265]
 
@@ -19,6 +21,7 @@ class Contact {
     this.photoUrl,
     required this.isEmergency,
     required this.userId,
+    this.groupIds = const [],
     required this.createdAt,
     required this.updatedAt,
   }); // [cite: 267]
@@ -33,6 +36,7 @@ class Contact {
       photoUrl: null,
       isEmergency: false,
       userId: '',
+      groupIds: [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -47,7 +51,10 @@ class Contact {
       'photoUrl': photoUrl,
       'isEmergency': isEmergency,
       'userId': userId,
-      'createdAt': Timestamp.fromDate(createdAt), // Konversi DateTime ke Timestamp
+      'groupIds': groupIds,
+      'createdAt': Timestamp.fromDate(
+        createdAt,
+      ), // Konversi DateTime ke Timestamp
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
   }
@@ -61,8 +68,12 @@ class Contact {
       nomor: data['nomor'] ?? '',
       email: data['email'] ?? '',
       photoUrl: data['photoUrl'],
-      isEmergency: data['isEmergency'] ?? data['isFavorite'] ?? false, // Support both old and new field
+      isEmergency:
+          data['isEmergency'] ??
+          data['isFavorite'] ??
+          false, // Support both old and new field
       userId: data['userId'] ?? '',
+      groupIds: List<String>.from(data['groupIds'] ?? []),
       // Konversi Timestamp dari Firestore ke DateTime
       createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
@@ -78,6 +89,7 @@ class Contact {
     String? photoUrl,
     bool? isEmergency,
     String? userId,
+    List<String>? groupIds,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -89,6 +101,7 @@ class Contact {
       photoUrl: photoUrl ?? this.photoUrl,
       isEmergency: isEmergency ?? this.isEmergency,
       userId: userId ?? this.userId,
+      groupIds: groupIds ?? this.groupIds,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -97,6 +110,6 @@ class Contact {
   // Override toString untuk debugging [cite: 272]
   @override
   String toString() {
-    return 'Contact(id: $id, nama: $nama, nomor: $nomor, email: $email, isEmergency: $isEmergency, userId: $userId)';
+    return 'Contact(id: $id, nama: $nama, nomor: $nomor, email: $email, isEmergency: $isEmergency, userId: $userId, groupIds: $groupIds)';
   }
 }

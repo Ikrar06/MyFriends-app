@@ -21,7 +21,8 @@ class ContactService {
 
   /// Get stream (real-time) of all contacts belonging to user
   Stream<List<Contact>> getContactsStream() {
-    if (_currentUserId == null) return Stream.value([]); // Return empty list if user is null
+    if (_currentUserId == null)
+      return Stream.value([]); // Return empty list if user is null
 
     return _firestore
         .collection(FirebaseConstants.contactsCollection)
@@ -29,8 +30,10 @@ class ContactService {
         .orderBy(FirebaseConstants.createdAt, descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => Contact.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs
+              .map((doc) => Contact.fromFirestore(doc))
+              .toList();
+        });
   }
 
   /// Get stream (real-time) of emergency contacts belonging to user
@@ -44,8 +47,10 @@ class ContactService {
         .orderBy(FirebaseConstants.createdAt, descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => Contact.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs
+              .map((doc) => Contact.fromFirestore(doc))
+              .toList();
+        });
   }
 
   /// Search contacts by name (case-sensitive)
@@ -61,8 +66,10 @@ class ContactService {
         .orderBy(FirebaseConstants.nama)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => Contact.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs
+              .map((doc) => Contact.fromFirestore(doc))
+              .toList();
+        });
   }
 
   /// Add new contact
@@ -71,11 +78,13 @@ class ContactService {
 
     try {
       // Add timestamp data and userId
-      Map<String, dynamic> contactMap = contact.copyWith(
-        userId: _currentUserId,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ).toMap();
+      Map<String, dynamic> contactMap = contact
+          .copyWith(
+            userId: _currentUserId,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          )
+          .toMap();
 
       // Use FieldValue.serverTimestamp()
       contactMap['createdAt'] = FieldValue.serverTimestamp();
@@ -115,9 +124,9 @@ class ContactService {
           .collection(FirebaseConstants.contactsCollection)
           .doc(id)
           .update({
-        FirebaseConstants.isEmergency: newValue,
-        FirebaseConstants.updatedAt: FieldValue.serverTimestamp(),
-      });
+            FirebaseConstants.isEmergency: newValue,
+            FirebaseConstants.updatedAt: FieldValue.serverTimestamp(),
+          });
     } catch (e) {
       throw Exception('Failed to change emergency status: $e');
     }
@@ -136,7 +145,7 @@ class ContactService {
       // 2. Generate unique filename
       String fileName =
           'contact_${contactId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
+
       // 3. Define path in Storage
       Reference storageRef = _storage
           .ref()
@@ -177,7 +186,7 @@ class ContactService {
           .collection(FirebaseConstants.contactsCollection)
           .doc(id)
           .get();
-      
+
       if (doc.exists) {
         Contact contact = Contact.fromFirestore(doc);
         if (contact.photoUrl != null && contact.photoUrl!.isNotEmpty) {
@@ -192,6 +201,36 @@ class ContactService {
           .delete();
     } catch (e) {
       throw Exception('Failed to delete contact: $e');
+    }
+  }
+
+  /// Add contact to a group (update groupIds)
+  Future<void> addContactToGroup(String contactId, String groupId) async {
+    try {
+      await _firestore
+          .collection(FirebaseConstants.contactsCollection)
+          .doc(contactId)
+          .update({
+            'groupIds': FieldValue.arrayUnion([groupId]),
+            FirebaseConstants.updatedAt: FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw Exception('Failed to add contact to group: $e');
+    }
+  }
+
+  /// Remove contact from a group
+  Future<void> removeContactFromGroup(String contactId, String groupId) async {
+    try {
+      await _firestore
+          .collection(FirebaseConstants.contactsCollection)
+          .doc(contactId)
+          .update({
+            'groupIds': FieldValue.arrayRemove([groupId]),
+            FirebaseConstants.updatedAt: FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw Exception('Failed to remove contact from group: $e');
     }
   }
 }

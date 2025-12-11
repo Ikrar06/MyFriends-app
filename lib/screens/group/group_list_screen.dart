@@ -41,7 +41,9 @@ class GroupListScreen extends StatelessWidget {
                 builder: (context, groupProvider, child) {
                   if (groupProvider.isLoading && groupProvider.groups.isEmpty) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFFFE7743)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFE7743),
+                      ),
                     );
                   }
 
@@ -50,7 +52,11 @@ class GroupListScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.group_outlined, size: 80, color: Colors.grey[300]),
+                          Icon(
+                            Icons.group_outlined,
+                            size: 80,
+                            color: Colors.grey[300],
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'No groups yet',
@@ -80,7 +86,8 @@ class GroupListScreen extends StatelessWidget {
                     itemCount: groupProvider.groups.length,
                     itemBuilder: (context, index) {
                       final group = groupProvider.groups[index];
-                      final memberCount = group.contactIds.length;
+                      // final memberCount = group.contactIds.length;
+                      final memberCount = 0; // Placeholder
 
                       return GestureDetector(
                         onTap: () => Navigator.pushNamed(
@@ -127,7 +134,8 @@ class GroupListScreen extends StatelessWidget {
                                 // Group Info
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         group.nama,

@@ -23,11 +23,7 @@ class GroupCard extends StatelessWidget {
   final Group group;
   final VoidCallback onTap;
 
-  const GroupCard({
-    super.key,
-    required this.group,
-    required this.onTap,
-  });
+  const GroupCard({super.key, required this.group, required this.onTap});
 
   /// Convert hex color string to Color object
   Color _hexToColor(String hexString) {
@@ -46,15 +42,13 @@ class GroupCard extends StatelessWidget {
     // Extract group properties
     final String nama = group.nama;
     final String colorHex = group.colorHex;
-    final int contactCount = group.getContactCount();
+    // final int contactCount = group.getContactCount(); // Deprecated
     final Color groupColor = _hexToColor(colorHex);
 
     return Card(
       margin: const EdgeInsets.all(8),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -62,12 +56,7 @@ class GroupCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border(
-              left: BorderSide(
-                color: groupColor,
-                width: 4,
-              ),
-            ),
+            border: Border(left: BorderSide(color: groupColor, width: 4)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,12 +90,9 @@ class GroupCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
-                    Icons.people,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
+                  Icon(Icons.people, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
+                  /*
                   Text(
                     '$contactCount contact${contactCount == 1 ? '' : 's'}',
                     style: TextStyle(
@@ -115,6 +101,7 @@ class GroupCard extends StatelessWidget {
                       color: Colors.grey[600],
                     ),
                   ),
+                  */
                 ],
               ),
             ],
@@ -205,12 +192,7 @@ class GroupChip extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
-  const GroupChip({
-    super.key,
-    required this.group,
-    this.onTap,
-    this.onDelete,
-  });
+  const GroupChip({super.key, required this.group, this.onTap, this.onDelete});
 
   Color _hexToColor(String hexString) {
     try {
@@ -239,15 +221,10 @@ class GroupChip extends StatelessWidget {
       avatar: Container(
         width: 8,
         height: 8,
-        decoration: BoxDecoration(
-          color: groupColor,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: groupColor, shape: BoxShape.circle),
       ),
       onDeleted: onDelete,
-      deleteIcon: onDelete != null
-          ? const Icon(Icons.close, size: 16)
-          : null,
+      deleteIcon: onDelete != null ? const Icon(Icons.close, size: 16) : null,
     );
   }
 }

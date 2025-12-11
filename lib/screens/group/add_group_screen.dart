@@ -37,16 +37,10 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
     try {
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
-      final group = Group(
-        nama: _nameController.text.trim(),
-        colorHex: '#FE7743', // Default orange color
-        contactIds: [], // Empty initially
-        userId: '', // Will be set by service
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      await groupProvider.addGroup(
+        _nameController.text.trim(),
+        '#FE7743', // Default orange color
       );
-
-      await groupProvider.addGroup(group);
 
       if (!mounted) return;
 
@@ -111,123 +105,132 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
                   children: [
-            // Group Icon Placeholder
-            Center(
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFE7743).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.group,
-                  size: 60,
-                  color: Color(0xFFFE7743),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Group Name Field
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Group Name *',
-                labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Enter group name',
-                prefixIcon: const Icon(Icons.label_outline, color: Color(0xFFFE7743)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Group name cannot be empty';
-                }
-                if (value.trim().length > 50) {
-                  return 'Group name maximum 50 characters';
-                }
-                return null;
-              },
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-
-            // Info Card
-            Card(
-              elevation: 0,
-              color: const Color(0xFFFE7743).withValues(alpha: 0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFFFE7743),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'You can add members after the group is created',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 13,
-                          color: Colors.grey[800],
+                    // Group Icon Placeholder
+                    Center(
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
                         ),
+                        child: const Icon(
+                          Icons.group,
+                          size: 60,
+                          color: Color(0xFFFE7743),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Group Name Field
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Group Name *',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter group name',
+                        prefixIcon: const Icon(
+                          Icons.label_outline,
+                          color: Color(0xFFFE7743),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Group name cannot be empty';
+                        }
+                        if (value.trim().length > 50) {
+                          return 'Group name maximum 50 characters';
+                        }
+                        return null;
+                      },
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Info Card
+                    Card(
+                      elevation: 0,
+                      color: const Color(0xFFFE7743).withValues(alpha: 0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: Color(0xFFFE7743),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'You can add members after the group is created',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 13,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save Button
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveGroup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFE7743),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Create Group',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 32),
-
-            // Save Button
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveGroup,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFE7743),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Create Group',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
           ],
         ),
       ),

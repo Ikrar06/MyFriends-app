@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../models/contact_model.dart';
+import '../providers/group_provider.dart';
+import 'group_tag.dart';
 
 /// Contact Card Widget
 ///
@@ -53,41 +56,70 @@ class ContactCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
-        leading: _buildAvatar(nama, photoUrl),
-        title: Text(
-          nama,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            leading: _buildAvatar(nama, photoUrl),
+            title: Text(
+              nama,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nomor,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                if (contact.groupIds.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Consumer<GroupProvider>(
+                    builder: (context, groupProvider, child) {
+                      final groups = groupProvider.getGroupsByIds(
+                        contact.groupIds,
+                      );
+                      if (groups.isEmpty) return const SizedBox.shrink();
+                      return Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: groups
+                            .take(3)
+                            .map(
+                              (group) => GroupTag(
+                                // Limit to 3 tags for card
+                                label: group.nama,
+                                colorHex: group.colorHex,
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+            trailing: showFavorite && isEmergency
+                ? const Icon(Icons.star, color: Colors.amber, size: 24)
+                : null,
+            onTap: onTap,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          nomor,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
-        ),
-        trailing: showFavorite && isEmergency
-            ? const Icon(
-                Icons.star,
-                color: Colors.amber,
-                size: 24,
-              )
-            : null,
-        onTap: onTap,
+        ],
       ),
     );
   }
@@ -111,7 +143,8 @@ class ContactCard extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
-                errorWidget: (context, url, error) => _buildInitialsAvatar(nama),
+                errorWidget: (context, url, error) =>
+                    _buildInitialsAvatar(nama),
               ),
             )
           : _buildInitialsAvatar(nama),
@@ -199,7 +232,11 @@ class CompactContactCard extends StatelessWidget {
       ),
       subtitle: Text(
         nomor,
-        style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey[600]),
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+          color: Colors.grey[600],
+        ),
       ),
       trailing: trailing,
       onTap: onTap,

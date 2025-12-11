@@ -4,7 +4,6 @@ class Group {
   final String? id; // Firestore document ID
   final String nama; // Group name (required, max 50)
   final String colorHex; // Color in hex format "#FF5733"
-  final List<String> contactIds; // Array of contact document IDs
   final String userId; // Owner's Firebase Auth UID
   final DateTime createdAt; // Creation timestamp
   final DateTime updatedAt; // Last update timestamp
@@ -13,7 +12,6 @@ class Group {
     this.id,
     required this.nama,
     required this.colorHex,
-    required this.contactIds,
     required this.userId,
     required this.createdAt,
     required this.updatedAt,
@@ -24,8 +22,7 @@ class Group {
     return Group(
       id: null,
       nama: '',
-      colorHex: '#808080', // Default color (e.g., grey)
-      contactIds: [],
+      colorHex: '#2196F3', // Default color (Blue)
       userId: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -37,7 +34,6 @@ class Group {
     return {
       'nama': nama,
       'colorHex': colorHex,
-      'contactIds': contactIds,
       'userId': userId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -50,9 +46,7 @@ class Group {
     return Group(
       id: doc.id,
       nama: data['nama'] ?? '',
-      colorHex: data['colorHex'] ?? '#808080',
-      // Pastikan contactIds adalah List<String>
-      contactIds: List<String>.from(data['contactIds'] ?? []),
+      colorHex: data['colorHex'] ?? '#2196F3',
       userId: data['userId'] ?? '',
       createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
@@ -64,7 +58,6 @@ class Group {
     String? id,
     String? nama,
     String? colorHex,
-    List<String>? contactIds,
     String? userId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -73,21 +66,15 @@ class Group {
       id: id ?? this.id,
       nama: nama ?? this.nama,
       colorHex: colorHex ?? this.colorHex,
-      contactIds: contactIds ?? this.contactIds,
       userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  // Method untuk mendapatkan jumlah kontak 
-  int getContactCount() {
-    return contactIds.length;
-  }
-
   // Override toString untuk debugging [cite: 380]
   @override
   String toString() {
-    return 'Group(id: $id, nama: $nama, contacts: ${getContactCount()})';
+    return 'Group(id: $id, nama: $nama, color: $colorHex)';
   }
 }

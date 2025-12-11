@@ -13,10 +13,7 @@ import '../../routes/app_routes.dart';
 class GroupDetailScreen extends StatefulWidget {
   final Group group;
 
-  const GroupDetailScreen({
-    super.key,
-    required this.group,
-  });
+  const GroupDetailScreen({super.key, required this.group});
 
   @override
   State<GroupDetailScreen> createState() => _GroupDetailScreenState();
@@ -34,19 +31,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   }
 
   void _navigateToEdit() {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.editGroup,
-      arguments: widget.group,
-    );
+    Navigator.pushNamed(context, AppRoutes.editGroup, arguments: widget.group);
   }
 
   void _navigateToContactDetail(Contact contact) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.contactDetail,
-      arguments: contact,
-    );
+    Navigator.pushNamed(context, AppRoutes.contactDetail, arguments: contact);
   }
 
   void _showAddContactDialog() {
@@ -94,7 +83,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
     if (confirm == true) {
       try {
-        await groupProvider.removeContactFromGroup(widget.group.id!, contact.id!);
+        await groupProvider.removeContactFromGroup(
+          widget.group.id!,
+          contact.id!,
+        );
 
         if (!mounted) return;
 
@@ -149,10 +141,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFFFE7743),
-                      Color(0xFFFF9068),
-                    ],
+                    colors: [Color(0xFFFE7743), Color(0xFFFF9068)],
                   ),
                 ),
                 child: Center(
@@ -301,7 +290,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                               return false; // Don't auto-dismiss
                             },
                             child: Card(
-                              margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 0,
+                                vertical: 4,
+                              ),
                               elevation: 1,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -313,11 +305,17 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                 ),
                                 leading: CircleAvatar(
                                   radius: 28,
-                                  backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
-                                  backgroundImage: contact.photoUrl != null && contact.photoUrl!.isNotEmpty
+                                  backgroundColor: const Color(
+                                    0xFFFE7743,
+                                  ).withValues(alpha: 0.2),
+                                  backgroundImage:
+                                      contact.photoUrl != null &&
+                                          contact.photoUrl!.isNotEmpty
                                       ? NetworkImage(contact.photoUrl!)
                                       : null,
-                                  child: contact.photoUrl == null || contact.photoUrl!.isEmpty
+                                  child:
+                                      contact.photoUrl == null ||
+                                          contact.photoUrl!.isEmpty
                                       ? Text(
                                           _getInitials(contact.nama),
                                           style: const TextStyle(
@@ -492,13 +490,19 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
             child: Consumer<ContactProvider>(
               builder: (context, contactProvider, child) {
                 final allContacts = contactProvider.contacts;
-                final existingIds = widget.group.contactIds;
+                final contactsInGroup = Provider.of<GroupProvider>(
+                  context,
+                  listen: false,
+                ).contactsInGroup;
+                final existingIds = contactsInGroup.map((c) => c.id).toSet();
 
                 // Show all contacts, but mark which ones are already in group
                 final filteredContacts = allContacts
-                    .where((contact) =>
-                        _searchQuery.isEmpty ||
-                        contact.nama.toLowerCase().contains(_searchQuery))
+                    .where(
+                      (contact) =>
+                          _searchQuery.isEmpty ||
+                          contact.nama.toLowerCase().contains(_searchQuery),
+                    )
                     .toList();
 
                 if (filteredContacts.isEmpty) {
@@ -532,9 +536,13 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
 
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFFFE7743).withValues(alpha: 0.2),
+                        backgroundColor: const Color(
+                          0xFFFE7743,
+                        ).withValues(alpha: 0.2),
                         child: Text(
-                          contact.nama.isNotEmpty ? contact.nama[0].toUpperCase() : '?',
+                          contact.nama.isNotEmpty
+                              ? contact.nama[0].toUpperCase()
+                              : '?',
                           style: const TextStyle(
                             fontFamily: 'Poppins',
                             color: Color(0xFFFE7743),
@@ -546,21 +554,22 @@ class _AddContactBottomSheetState extends State<_AddContactBottomSheet> {
                         contact.nama,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          color: isAlreadyInGroup ? Colors.grey[400] : Colors.black,
+                          color: isAlreadyInGroup
+                              ? Colors.grey[400]
+                              : Colors.black,
                         ),
                       ),
                       subtitle: Text(
                         contact.nomor,
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          color: isAlreadyInGroup ? Colors.grey[300] : Colors.grey[600],
+                          color: isAlreadyInGroup
+                              ? Colors.grey[300]
+                              : Colors.grey[600],
                         ),
                       ),
                       trailing: isAlreadyInGroup
-                          ? const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                            )
+                          ? const Icon(Icons.check_circle, color: Colors.green)
                           : IconButton(
                               icon: const Icon(
                                 Icons.add_circle,

@@ -10,10 +10,7 @@ import '../../models/group_model.dart';
 class EditGroupScreen extends StatefulWidget {
   final Group group;
 
-  const EditGroupScreen({
-    super.key,
-    required this.group,
-  });
+  const EditGroupScreen({super.key, required this.group});
 
   @override
   State<EditGroupScreen> createState() => _EditGroupScreenState();
@@ -200,130 +197,142 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
                   children: [
-            // Group Icon
-            Center(
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFE7743).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.group,
-                  size: 60,
-                  color: Color(0xFFFE7743),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Group Name Field
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Group Name *',
-                labelStyle: const TextStyle(fontFamily: 'Poppins'),
-                hintText: 'Enter group name',
-                prefixIcon: const Icon(Icons.label_outline, color: Color(0xFFFE7743)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFFE7743), width: 2),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Group name cannot be empty';
-                }
-                if (value.trim().length > 50) {
-                  return 'Group name maximum 50 characters';
-                }
-                return null;
-              },
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-
-            // Info Card
-            Card(
-              elevation: 0,
-              color: Colors.grey[100],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Color(0xFFFE7743),
-                          size: 20,
+                    // Group Icon
+                    Center(
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFE7743).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Group Information',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.group,
+                          size: 60,
+                          color: Color(0xFFFE7743),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Group Name Field
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Group Name *',
+                        labelStyle: const TextStyle(fontFamily: 'Poppins'),
+                        hintText: 'Enter group name',
+                        prefixIcon: const Icon(
+                          Icons.label_outline,
+                          color: Color(0xFFFE7743),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFE7743),
+                            width: 2,
                           ),
                         ),
-                      ],
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Group name cannot be empty';
+                        }
+                        if (value.trim().length > 50) {
+                          return 'Group name maximum 50 characters';
+                        }
+                        return null;
+                      },
+                      textCapitalization: TextCapitalization.words,
                     ),
-                    const SizedBox(height: 12),
-                    _buildInfoRow('Members', '${widget.group.contactIds.length} contacts'),
-                    _buildInfoRow('Created', _formatDate(widget.group.createdAt)),
+                    const SizedBox(height: 16),
+
+                    // Info Card
+                    Card(
+                      elevation: 0,
+                      color: Colors.grey[100],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: Color(0xFFFE7743),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Group Information',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // _buildInfoRow('Members', '${widget.group.contactIds.length} contacts'),
+                            _buildInfoRow(
+                              'Created',
+                              _formatDate(widget.group.createdAt),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save Button
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveGroup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFE7743),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Save Changes',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 32),
-
-            // Save Button
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveGroup,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFE7743),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Save Changes',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
           ],
         ),
       ),
@@ -359,8 +368,18 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
